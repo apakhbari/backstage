@@ -297,7 +297,9 @@ APA 🖖🏻
 Platform Engineering Series : https://youtube.com/playlist?list=PLGVPcLSzJXQos1O18dvKoW2XSczz2I2lH&si=Jf4lDdaGW4GMLQYt
 
 How to easily create standardised software templates with Backstage: https://b-nova.com/en/home/content/easily-create-standardised-software-templates-with-backstage/
+
 Backstage by Example (Part 2): https://john-tucker.medium.com/backstage-by-example-part-2-b41cc12a5ad5
+
 Backstage Plugins by Example (Part 1): https://john-tucker.medium.com/backstage-plugins-by-example-part-1-a4737e21d256
 
 
