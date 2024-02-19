@@ -102,12 +102,70 @@ Manually registering components:
 Understanding the Lifecycle of an Entity
 - By registering a YAML file location, you’ve already added your first component to the Catalog. Under the hood, Backstage used an entity provider to store it as a raw entity in the database, then ran it through a series of processors and stitched together the processors’ outcomes into a final entity. Only after all this is done you could see the entity page in your Catalog. 
 
+![Entity lifecycle.png](./etc/Entity_lifecycle.png)
+
+- All entities in Backstage come from entity providers, which take data from authoritative sources. Entity providers import raw data from their source and store it in a database in a process called ingestion. A Backstage instance typically uses more than one entity provider, for example, GitHub for repositories, Okta for users, and AWS S3 for resources. Entity providers can issue updates on their associated entities when they see fit and determine when raw entities are to be processed. 
+- When marked for processing, a raw entity goes through a series of steps with processors that may change their data format, extract relationships, emit errors, or even create new entities. Entities are processed one by one but can involve all of your services. You can add and configure processors in your instance as you want.
+- After processing is done, the information resulting from processing steps that impact the current entity is stitched together into a final entity that can be consumed through the Catalog API, which is used to generate pages and more in your Backstage instance. The stitching process is fixed and doesn’t allow any customizations, so you need to make sure you transform the data in the ingestion or processing stages.
+
+Understanding Locations
+- locations are internal to Backstage, knowing what they are might be useful when setting up the Catalog.
+- Location is a kind of entity in Backstage. It is used for keeping track of where Catalog information can be found. In this case, the generated location targets the YAML file repository.
+- All entities registered in the Catalog rely on locations, not only those linked to repositories like components. Each entity provider is responsible for determining the canonical URL used as the location for an entity. Furthermore, a location may have more than one target. For example, when registering components that live in a monorepo, a single location may reference all the services stored there. 
+- You normally do not have to interact with location entities because Backstage generates them. You won’t even see them in the dependency graph for your components, although all of them are associated with a location. But given that they represent the contact point between your instance and external sources when something goes wrong, you might need to check if the locations are working correctly.
+
+Orphaned Entities and Deletions
+- The framework continuously evaluates entities through the process outlined on the previous page. Thus, it updates the dependency graph in the Catalog over time. When a parent entity no longer emits a child entity, the child entity is labeled as an orphan. Whether an entity is orphaned is important when deleting an entity. 
+- Orphaned entities occur when a parent entity no longer emits a child entity, severing the relationship which existed between them before. When this is detected, the stitching process injects a backstage.io/orphan: 'true’ annotation on the child entity but doesn’t remove it from the Catalog. The orphaned entity can then be deleted or reclaimed by another parent entity.
+- Orphanining can occur when a catalog-info file is moved in the repository without updating the Catalog registration or when a user removes the entity’s entry from the parent YAML file. Orphaning may also occur in batch processing when the crawler doesn’t find a reference where it expected it to be.
+- Whether an entity is orphaned may be a condition to delete an entity successfully. There are two kinds of deletion in Backstage: implicit deletion and explicit deletion. When you mark an entity for deletion through the entity provider, you’re issuing an implicit deletion bound to other entities associated with it. If the entity has parents, you’ll be prompted to issue the deletion through a parent. If it’s orphaned, the entity will be deleted as part of the processing loop.
+- Explicit deletion can be issued through the Catalog API. It makes sense to use this approach with abandoned entities or entities that are not being kept up to date by any other parent entity. The reason is that if you delete an entity through explicit deletion, it’ll re-appear in the Catalog if a parent entity references it again.
+
+Defining a Taxonomy for Your Entities
+- You can register different kinds of entities in Backstage and different types for each kind.  By default, Backstage recognizes nine kinds, with pre-defined types in some cases. However, you can better define the kinds and types that represent your organization.
+
+- Let’s review the basic kinds that you’ll work with most of the time: 
+1. Component refers to a software component bound to a repository and is deployable or linkable in an Artifactory. There are three known types of components: service, website, and library.
+2. API refers to an interface that can be exposed by a component. Backstage ships with support for OpenAPI, AsyncAPI, GraphQL, and gRPC, but it doesn’t have an opinion on the types you may use.
+3. Resource refers to infrastructures like databases, storages, or CDNs. Bringing resources to your Catalog and associating them with components can be useful to visualize and optimize your system.
+4. Group is used to arrange users into teams or business units. Backstage lets you model your organization hierarchy using groups that belong to other groups.
+5. User refers to a person, such as an employee or contractor. Backstage requires you to assign all users to a group.
+
+- Backstage uses kinds and types to organize entities and customize how they are presented in the Catalog. For example, you can make your Catalog show a visitors analytics dashboard in an entity of kind component and type website but show an incidents report for a component with type service instead.
+- Backstage allows you to set arbitrary text in the kind and type fields of any catalog-info file, but it won’t do anything special with that information until you define behavior in your instance. To start using custom kinds, you need to configure your catalog rules to pick up your kind, as it only recognized the default kinds. For custom types, you’ll need to decide what to do with the type, for instance, showing a certain integration on its entity page.
+
+
+Modeling Your System in Backstage
+- Backstage intends to gather all your software assets in one place. However, bringing them all together in a long list would make it harder for your users to navigate through. Just as you can map your organization hierarchy with Group and User entities, you can model your ecosystem using System and Domain entities. 
+- **System** is a default kind in Backstage whose purpose is to abstract away details of a unit, letting the user know what the system has to offer without getting into how it is composed. As such, a system can be comprised of several components and resources, but will only expose the APIs contained within it and those it depends on. 
+- **Domain** is also a default kind in Backstage, meant to arrange together systems and documentation regarding a business unit or other kind of bounded context. The definition is quite loose so you can aggregate together what makes the most sense for your case.  
+- Domain and systems will be visible in the “Explore” tab of your Backstage instance. From there, users can more easily find relevant information without having to know the name of the component or service they may need.
+
+Relationships
+- Entities can be related to each other in more than one way. Relationships in Backstage are read-only and directional. This means you define how the source entity is related to a target entity. All relationships are mapped into the software graph, which can be visualized on your Catalog entity’s page.
+
+- Let’s review the built-in relationship types that your entities can use:
+1. **providesApi** states a component or system provides an API for consumption. apiProvidedBy signifies the other direction of this relationship.
+2. **consumesApi** expresses a component or system consumes the API provided by another entity.  **apiConsumedBy** signifies the other direction of this relationship.
+3. **dependsOn** means a component depends on another entity, for example a website component that is built using a library component. **dependencyOf** signifies the other direction of this relationship.
+4. **parentOf** and **childOf** are used to build trees with entities, for example when modeling an organization with groups. This relationship is commonly defined in **spec.parent** and/or **spec.children**.
+5. **memberOf** and **hasMember** defines a membership relationship, used for users and groups.
+6. **partOf** states a component or system is part of a larger component, a system, or domain. This relation is commonly defined in **spec.system** or **spec.domain**.
+
+Ownership
+- In Backstage, ownership is meant to answer who’s ultimately responsible for each component, API, system, or domain. There can only be one owner for an entity, preferably a group rather than a user. The owner is expected to be able to maintain the metadata and be the contact point for the entity.
+- Ownership is typically defined in **spec.owner** of the owned entity, which describes the relationships **ownedBy**. **spec.owner** is a required field for all components, APIs, resources, systems, and domains you register in the Catalog. Each group or user will get a corresponding **ownerOf** relationship for each entity they own. 
+- If you already manage ownership in your repositories through CODEOWNERS, you can let Backstage use this reference instead of filling in the **spec.owner** field for the applicable entities. This feature is available through the CodeOwnersProcessor module of the Catalog.
 
 ### Scaffolder
+#### Intro
 - The Scaffolder provides your developers with the ability to execute software templates that initialize repositories with skeleton code and predefined settings.
 - The Scaffolder is a perfect place for new engineers to jump into the development process right away. You could, for example, set up a template to Create Node/React Website in your Scaffolder, which sets up a repository with CI/CD and analytics baked in from the beginning. When the new developers use the software template, they’ll get a deploy-ready service that will allow them to familiarize themselves with the tools and feel productive with a few clicks instead of having to wander aimlessly through your tech ecosystem. 
 - A software template is defined in a YAML file that specifies parameters and steps to execute. Backstage will generate a UI in the Scaffolder based on the parameters that you specify in your software template. For the steps, you can leverage built-in actions for common fetch operations, but you can also define your own. 
 - Templates are stored in the Catalog under a template kind. Furthermore, all components initialized by the Scaffolder are automatically added to the Catalog. Therefore, there’s a virtuous cycle between the Scaffolder and the Catalog that promotes discoverability and standardization.
+
+#### In Depth
+
 
 ### TechDocs
 - a centralized hub for all their documentation
@@ -148,13 +206,7 @@ When you navigate to the newly created directory, you’ll see the following str
 
 [Backstage Docs](https://backstage.io/docs/overview/what-is-backstage)
 
-<br>
-<br>
-
 ## Setup Backstage Development Environment
-
-<br>
-<br>
 
 ### Set up the repo
 
