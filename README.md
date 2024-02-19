@@ -18,17 +18,17 @@
 - DB is postgres, but can use SQLite for dev purposes, if you use SQLIte it is going to be ephemeral so every time you restart it, data will lose
 
 ## Components
-### Core
+### 1- Core
 Deployed by default (e.g. software catalog)
 1. SOftware catalog: all info about system & organization
 2. Tech Docs: Documentatin inside backstage
 3. Search: search across all backstage portal
 4. Service Template: bootstrap services in backstage
 
-### App (Integrations)
+### 2- App (Integrations)
 Extend capabilities of backstage. Deployed but require configuration (e.g. SSO / Analytics / Git)
 
-### Plugins
+### 3- Plugins
 Require installation, integration & configuration to your backstage application manually
 
 Types of plugins:
@@ -53,7 +53,7 @@ https://training.linuxfoundation.org/training/introduction-to-backstage-develope
 4. a Kubernetes cluster visualizer
 5. cross-ecosystem search capabilities
 ## Components
-### software catalog
+### 1- software catalog
 #### Intro
 - The Catalog’s objective is to map all software assets in your organization, including websites, APIs, libraries, and resources, in a centralized directory. This centralization is aimed at helping teams manage technology and enable discoverability. The Catalog tracks each asset's metadata, ownership, and dependencies, resulting in a software graph that surfaces orphaned entities.
 - The Catalog is flexible enough to host a wide variety of software assets, known as entities in Backstage. Because a website is very different from a data processing pipeline, entities can be differentiated by kind. Moreover, even within kinds of entities, you can define types.
@@ -84,7 +84,7 @@ spec:
   lifecycle: production
   owner: tracking-team
 ```
-- In the snippet above, notice that apiVersion, kind, and metadata.name are mandatory for all entities. And for a component, such as a website from the example, you must also specify type, lifecycle, and owner in spec.
+- In the snippet above, notice that **apiVersion**, **kind**, and **metadata.name** are mandatory for all entities. And for a component, such as a website from the example, you must also specify type, lifecycle, and owner in spec.
 - By default, Backstage recognizes a component to be any type from the following: website, service, and library. As for lifecycle, the framework recognizes production, experimental, and deprecated. You can use these attributes to customize how components are rendered in your Catalog.
 
 - Once you have a YAML file to describe your component, you’ll need to add it to the component’s repository and make it available on its default branch. The rationale behind this is keeping the component’s metadata close to its source code, so maintainers can more easily keep the information up-to-date.
@@ -157,25 +157,60 @@ Ownership
 - Ownership is typically defined in **spec.owner** of the owned entity, which describes the relationships **ownedBy**. **spec.owner** is a required field for all components, APIs, resources, systems, and domains you register in the Catalog. Each group or user will get a corresponding **ownerOf** relationship for each entity they own. 
 - If you already manage ownership in your repositories through CODEOWNERS, you can let Backstage use this reference instead of filling in the **spec.owner** field for the applicable entities. This feature is available through the CodeOwnersProcessor module of the Catalog.
 
-### Scaffolder
+### 2- Scaffolder
 #### Intro
 - The Scaffolder provides your developers with the ability to execute software templates that initialize repositories with skeleton code and predefined settings.
 - The Scaffolder is a perfect place for new engineers to jump into the development process right away. You could, for example, set up a template to Create Node/React Website in your Scaffolder, which sets up a repository with CI/CD and analytics baked in from the beginning. When the new developers use the software template, they’ll get a deploy-ready service that will allow them to familiarize themselves with the tools and feel productive with a few clicks instead of having to wander aimlessly through your tech ecosystem. 
 - A software template is defined in a YAML file that specifies parameters and steps to execute. Backstage will generate a UI in the Scaffolder based on the parameters that you specify in your software template. For the steps, you can leverage built-in actions for common fetch operations, but you can also define your own. 
 - Templates are stored in the Catalog under a template kind. Furthermore, all components initialized by the Scaffolder are automatically added to the Catalog. Therefore, there’s a virtuous cycle between the Scaffolder and the Catalog that promotes discoverability and standardization.
 
+
 #### In Depth
+- The Scaffolder enables you to provide software templates to your teams. Software templates are composed of a YAML definition and, typically, a skeleton directory. You can define the parameters that will be asked from the user and the steps that the template will execute. The community templates can help you get ideas of the templates' potential.
+- Software templates are defined using YAML files and are registered in Backstage the same way other entities are. Software templates are defined by setting the entity kind to template, which requires parameters and steps to be declared.
+- Let’s review a Hello world template to illustrate how templates are defined.
+
+```
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: hello-world-template
+  title: Hello World
+  description: Says Hello to a specified name.
+spec:
+  owner: terroir-ops
+  type: service
+
+  parameters:
+    - title: You are about to say hello to your first Backstage Template
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+  steps:
+    - id: log-message
+      name: Log Message
+      action: debug:log
+      input:
+        message: 'Hello, ${{ parameters.name }}!'
+```
+- As with other entities, **apiVersion**, **kind**, and **metadata.name** are required fields.  **spec.owner** and **spec.type** are also required, where the owner is the team responsible for this template, and type is the resulting component type: if the template will initialize a website, then the template is expected to have a type website.
+- With each parameter you define, the Scaffolder will generate an input in the template form.
+- As for steps, you can define what happens in each of them. A few actions are available by default, and you can define your own too. You can use the parameters inputted by the user in the steps.
+- IMPORTANT: To be able to preview templates in UI, you need to use a browser with support for the File System Access API, such as Chrome.
 
 
-### TechDocs
+### 3- TechDocs
 - a centralized hub for all their documentation
 - TechDocs is the framework’s documentation-as-code solution; it takes markdown files and transforms them into static pages
 - TechDocs follows the same principle as the Catalog metadata files: stay close to the source code to stay accurate. TechDocs are written as markdown files in the repository where the entity that they document is kept. Then, the TechDocs Backstage plugin fetches these files from all services, generates static pages, and publishes them.
 
-### k8s
+### 4- k8s
 - he Kubernetes plugin is tied to the Catalog. It shows information about the clusters associated with a service registered in the catalog. To enable it, you must tell Backstage how to discover your clusters, whether that is by reading information that exists already in the Catalog or by fetching it directly from GKE or another custom Kubernetes cluster supplier.
 
-### Search
+### 5- Search
 -  the most recent addition to Backstage’s framework.
 -  earch allows developers to find information across their ecosystem by leveraging your search engine of preference and lets you customize how things are indexed and presented to the user.
 -  Search is quite customizable. For starters, the plugin allows you to bring your own search engine, although ElasticSearch is the officially maintained engine. Search ships with a rudimentary query translator that turns the user’s input into a fully formed query, but you’re allowed to customize it to your engine and use cases better. You’re also welcome to customize the search results page and what each result looks like.
