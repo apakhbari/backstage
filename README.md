@@ -97,7 +97,11 @@ Registering a GitHub Integration
 Manually registering components:
 - the work can be tedious if your organization has dozens or hundreds of repositories.
 - For surfacing component locations automatically from your organization, Backstage offers entity providers for GitHub, Gitlab, Azure DevOps, and Bitbucket. The entity provider will scan your organization’s repositories looking for metadata files to register them in the Catalog. You can configure how frequently Backstage will scan your organization in each service.
-- When setting up an entity provider, a common issue that Backstage adopters run into is rate limits from the source code control system’s APIs. But you can leverage using different types of tokens to alleviate this issue; for example, a GitHub App token has a higher rate limit than a personal access token. 
+- When setting up an entity provider, a common issue that Backstage adopters run into is rate limits from the source code control system’s APIs. But you can leverage using different types of tokens to alleviate this issue; for example, a GitHub App token has a higher rate limit than a personal access token.
+
+Understanding the Lifecycle of an Entity
+- By registering a YAML file location, you’ve already added your first component to the Catalog. Under the hood, Backstage used an entity provider to store it as a raw entity in the database, then ran it through a series of processors and stitched together the processors’ outcomes into a final entity. Only after all this is done you could see the entity page in your Catalog. 
+
 
 ### Scaffolder
 - The Scaffolder provides your developers with the ability to execute software templates that initialize repositories with skeleton code and predefined settings.
