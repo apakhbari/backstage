@@ -201,6 +201,37 @@ spec:
 - As for steps, you can define what happens in each of them. A few actions are available by default, and you can define your own too. You can use the parameters inputted by the user in the steps.
 - IMPORTANT: To be able to preview templates in UI, you need to use a browser with support for the File System Access API, such as Chrome.
 
+Defining Parameters in a Software Template
+- In a software template, the parameters property is used to generate a form, with one or multiple form steps, that the user needs to fill in when executing a template. In each form step, you can define properties, which will be mapped to inputs to ask for information from the user.
+- The parameters property accepts an array of objects. Each entry in the array is a form step. Form steps are not bound to the parameter step from the template definition. Thus, you can break up your form into the steps that make the most sense to your users and use any of those values across any template step later on.
+- Each form step must specify a title, which properties it will ask from the user, and if any of them is required. While defining your parameters, the Template Editor > Edit Template Form tool is useful for previewing how your form will look like.
+- Let’s define the parameters for a two-form steps template, where you ask for a simple string from the user in each form step.  The parameters would look like this:
+
+```
+parameters:
+  - title: First form step
+    required:
+        - text-a
+    properties:
+      text-a:
+        title: Some text A
+        type: string
+  - title: Second form step
+    required:
+      - text-b
+    properties:
+      text-b:
+        title: Some text A
+        type: string
+steps: 
+  - id: fetch-base
+    name: Fetch Base
+    action: fetch:template   
+input:
+      url: ./template
+      values:
+        name: ${{parameters.name}}
+```
 
 ### 3- TechDocs
 - a centralized hub for all their documentation
