@@ -286,7 +286,11 @@ subPath: postgres
 ```bash
 kubectl apply -f gke-resources
 ```
-
+## Cases
+- FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+```
+$ export NODE_OPTIONS=--max-old-space-size=4096
+```
 
 # acknowledgment
 ## Contributors
