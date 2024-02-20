@@ -18,12 +18,15 @@
 - DB is postgres, but can use SQLite for dev purposes, if you use SQLIte it is going to be ephemeral so every time you restart it, data will lose
 
 ## Components
+- Backstage’s core is composed of around 25 packages, which include a CLI, utility tools, API definitions, themes, and helpers. But what really makes up Backstage are the more than 150 open source plugin packages available, which include the framework’s main features.
+
 ### 1- Core
 Deployed by default (e.g. software catalog)
-1. SOftware catalog: all info about system & organization
-2. Tech Docs: Documentatin inside backstage
-3. Search: search across all backstage portal
-4. Service Template: bootstrap services in backstage
+1. Software catalog: all info about system & organization
+2. Service Template: bootstrap services in backstage
+3. Tech Docs: Documentatin inside backstage
+4. Search: search across all backstage portal
+5. Kubernetes cluster visualizer
 
 ### 2- App (Integrations)
 Extend capabilities of backstage. Deployed but require configuration (e.g. SSO / Analytics / Git)
@@ -39,19 +42,13 @@ Types of plugins:
 - app-config.yaml --> app config. all settings are here, plugins are being add here
 - catalog --> holds components in your system
 
----
-# Backstage tutorial Linux Foundation
-https://learning.edx.org/course/course-v1:LinuxFoundationX+LFS142x+3T2022/home
-
-https://training.linuxfoundation.org/training/introduction-to-backstage-developer-portals-made-easy-lfs142x/
-
-- Backstage’s core is composed of around 25 packages, which include a CLI, utility tools, API definitions, themes, and helpers. But what really makes up Backstage are the more than 150 open source plugin packages available, which include the framework’s main features.
 - Backstage offers five core functionalities:
 1. software catalog
 2. software templates
-3. a documentation generator
+3. Techdocs
 4. a Kubernetes cluster visualizer
 5. cross-ecosystem search capabilities
+
 ## Components
 ### 1- software catalog
 #### Intro
@@ -233,10 +230,54 @@ input:
         name: ${{parameters.name}}
 ```
 
+- Now, let’s talk about the properties that you define in each form step. The most basic property type is a string, as the one that can be seen in the example for text-a and text-b. However, you can customize the input rendered to obtain this string by declaring a ui:field. 
+- Backstage comes with built-in ui:fields that make it easier for the user to input a valid value. For instance, EntityPicker will let the user select from the entities registered in the Catalog, as pictured below:
+- Other examples for ui:field are OwnedEntityPicker, which shows a list of entities owned by the user, EntityNamePicker which validates the user inputs a valid entity name, and RepoUrlPicker, which accepts criteria of repositories to be shown as options. 
+- Other than strings, parameters can also be of type number, array, and object.  You can also specify options for each parameter, such as default values or a fixed list of possible values. 
+- Once you have defined your form steps and parameters, you can use them in your steps using the parameter key and the name of the parameter. For example:
+```
+parameters:
+  properties:
+    name:
+      type: string
+steps:
+  - id: log-message
+    name: Log Message
+    action: debug:log
+    input:
+      message: 'Hello, ${{ parameters.name }}!'
+```
+
+Defining Steps in a Software Template
+- Steps define the actions that are taken by the software template when it is run. The Scaffolder initially creates a temporary directory referred to as the workspace, in which files are downloaded, generated, updated, and pushed to some external system. Steps are executed in consecutive order according to the template definition.
+- Backstage ships with some useful actions, and you can define your own too. To check which actions are available in your instance and how to use them, go to the Create page, click on the top right context menu and then click on “Installed Actions”. On that page, you’ll find documentation for the actions that you can use in your steps and how to use them.
+
 ### 3- TechDocs
+#### Intro
 - a centralized hub for all their documentation
 - TechDocs is the framework’s documentation-as-code solution; it takes markdown files and transforms them into static pages
 - TechDocs follows the same principle as the Catalog metadata files: stay close to the source code to stay accurate. TechDocs are written as markdown files in the repository where the entity that they document is kept. Then, the TechDocs Backstage plugin fetches these files from all services, generates static pages, and publishes them.
+
+#### In Depth
+- he TechDocs plugin lets you add documentation for your software components directly into their corresponding entity page in Backstage. TechDocs is based on markdown files stored alongside the code that they document to make it easier for developers to keep it up to date. TechDocs allows you to define navigation and pages, which will be made available under the “Docs” tab of its associated component.
+- Docs are associated with a component when their YAML file includes the backstage.io/techdocs-ref annotation. The annotation tells Backstage that there are docs available that it should show to the user.
+
+Build Strategies in TechDocs
+- TechDocs goes through three stages to make documentation from markdown files in a repo to pages deployed in your Backstage instance:
+1. preparation
+2. generation
+3. publishing
+
+- During the preparation stage, TechDocs clones the component’s repository into a temporary directory to be able to access the docs locally. Then, the generation stage proceeds by leveraging a docker image called mkdocs-techdocs-core, which uses a Python library to build the static assets that compose the documentation. At last, in the publishing stage, the assets are moved somewhere so they can be deployed.
+- Although the process described above is simple to get started with, it comes with limitations when using it in production. For example, building the documentation uses a Docker image, which makes it difficult to run in, for example, a Kubernetes pod. You could use the image binaries, but then you’d be adding non-core Backstage dependencies in your Dockerfile. 
+- Furthermore, building the documentation on the fly will result in slow first requests and duplicated work if you have multiple backends configured in your instance, as TechDocs will generate the docs for each of them. Additionally, pulling down the entire source code of a component to generate docs might not meet your security expectations. 
+- For these reasons, you can tell TechDocs that you will opt out of its built-in generation—by specifying techdocs.builder to external in the TechDocs annotation—and publish the generated assets in a Cloud storage. Typically, you’d rely on your CI system to generate documentation when a Pull Request is merged. The generated assets will then be published in a Cloud storage, such as an S3 Bucket, and your Backstage instance would read them when needed. 
+
+Writing TechDocs
+- TechDocs generates the documentation using MkDocs and styles it using Material for MkDocs, so there is nothing particularly “Backstage” about how you write your markdown files or configurations. 
+- You can configure the navigation in the mkdocs.yml for your documentation, as you would normally do with MkDocs.
+- For writing the documentation, you can use standard markdown. The Python library in charge of the generation complies with standard markdown syntax, with very minor differences. 
+- For linking files within your docs, you can use standard relative markdown links.
 
 ### 4- k8s
 - he Kubernetes plugin is tied to the Catalog. It shows information about the clusters associated with a service registered in the catalog. To enable it, you must tell Backstage how to discover your clusters, whether that is by reading information that exists already in the Catalog or by fetching it directly from GKE or another custom Kubernetes cluster supplier.
@@ -290,9 +331,6 @@ git clone git@github.com:backstage/backstage.git
 git checkout v1.13.2
 ```
 
-<br>
-<br>
-
 ### Install & Configure NVM
 
 NVM - Node Version Manager, nvm allows you to quickly install and use different versions of Node via the command line.
@@ -314,9 +352,6 @@ nvm use 18
 nvm alias default 18
 ```
 
-<br>
-<br>
-
 ### Install Yarn
 1. Install Yarn
 ```
@@ -330,9 +365,6 @@ yarn set version 1.22.19
 ```
 yarn --version
 ```
-
-<br>
-<br>
 
 #### MAC x86 users: Verify you got xcrun
 ```bash
@@ -353,21 +385,13 @@ cd guy-backstage/
 yarn dev
 ```
 
-<br>
-<br>
-
 ### Verify your application
 1. Go to the Backstage UI (should open automatically after the `yarn dev` command)
 2. Import a component using this file by going into [Register an existing component](http://localhost:3000/catalog-import) and import this file- `https://github.com/backstage/backstage/blob/master/catalog-info.yaml`
 3. Review the example component
 
-<br>
-<br>
 
 ## Run Backstage On Kubernetes
-
-<br>
-<br>
 
 ### Build the container image
 1. In your application directory, build your application
@@ -381,9 +405,6 @@ yarn build:backend
 docker image build . -f packages/backend/Dockerfile --tag backstage:1.0.0
 ```
 
-<br>
-<br>
-
 ### Upload the image to your registry/kind cluster
 
 This example is for Kind cluster, you can import the image to your docker repository
@@ -391,9 +412,6 @@ This example is for Kind cluster, you can import the image to your docker reposi
 ```
 kind load docker-image backstage:1.0.0 --name local-single-node
 ```
-
-<br>
-<br>
 
 ### Deploy Postgres
 
@@ -424,9 +442,6 @@ backstage=# \q
 bash-5.1# exit
 ```
 
-<br>
-<br>
-
 ### Deploy Backstage on Kubernetes
 
 1. Create the Backstage resources by preparing the files the apply them to the target cluster. You can find the instructions for it in the docs website as well - (link)[https://backstage.io/docs/deployment/k8s#creating-the-backstage-instance]
@@ -446,8 +461,6 @@ kubectl port-forward --namespace=backstage svc/backstage 8080:80
 
 1. access the (backstage app)[http://127.0.0.1:8080/]
 
-<br>
-<br>
 
 ### Deploy the Backstage Kubernetes Plugin
 1. Follow the instructions in the documentaion - (link)[https://backstage.io/docs/features/kubernetes/installation]
@@ -489,28 +502,6 @@ kubectl apply -f example-application
 
 3. Navigate to the new created app and go to the Kubernetes tab
 
-
-### Deploy on GKE
-1. Remove the sections that create local volumes
-```bash
-  labels:
-    type: local
-...
-    storageClassName: manual
-```
-2. Change the pg deployment by deleting the next line:
-```bash
-subPath: postgres
-```
-
-3. Upload your image to some container registry
-
-4. Change the image in the bs-deploy.yaml to your image and apply it
-
-5. Create an external service
-```bash
-kubectl apply -f gke-resources
-```
 ## Cases
 - FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
 ```
@@ -523,15 +514,14 @@ $ export NODE_OPTIONS=--max-old-space-size=4096
 APA 🖖🏻
 
 ## Links
-Platform Engineering Series : https://youtube.com/playlist?list=PLGVPcLSzJXQos1O18dvKoW2XSczz2I2lH&si=Jf4lDdaGW4GMLQYt
-
-How to easily create standardised software templates with Backstage: https://b-nova.com/en/home/content/easily-create-standardised-software-templates-with-backstage/
-
-Backstage by Example (Part 2): https://john-tucker.medium.com/backstage-by-example-part-2-b41cc12a5ad5
-
-Backstage Plugins by Example (Part 1): https://john-tucker.medium.com/backstage-plugins-by-example-part-1-a4737e21d256
-
-
+- Platform Engineering Series : https://youtube.com/playlist?list=PLGVPcLSzJXQos1O18dvKoW2XSczz2I2lH&si=Jf4lDdaGW4GMLQYt
+- How to easily create standardised software templates with Backstage: https://b-nova.com/en/home/content/easily-create-standardised-software-templates-with-backstage/
+- Backstage by Example (Part 2): https://john-tucker.medium.com/backstage-by-example-part-2-b41cc12a5ad5
+- Backstage Plugins by Example (Part 1): https://john-tucker.medium.com/backstage-plugins-by-example-part-1-a4737e21d256
+---
+- https://learning.edx.org/course/course-v1:LinuxFoundationX+LFS142x+3T2022/home
+- https://training.linuxfoundation.org/training/introduction-to-backstage-developer-portals-made-easy-lfs142x/
+- 
 ```                                                                                                       
   aaaaaaaaaaaaa  ppppp   ppppppppp     aaaaaaaaaaaaa   
   a::::::::::::a p::::ppp:::::::::p    a::::::::::::a  
