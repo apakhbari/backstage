@@ -38,19 +38,28 @@ Types of plugins:
 - Service backed Plugins: Service is in same cluster/entity. deployed on different service in same system
 - proxy backed plugin: redirect to proxy, which fetch info from some service outside of this cluster/entity
 
-## Config files
-- app-config.yaml --> app config. all settings are here, plugins are being add here
-- catalog --> holds components in your system
+## Structure
+When you navigate to the newly created directory, you’ll see the following structure:
+```
+─ packages
+    ├─ app
+            └─ package.json
+    └─ backend
+            └─ package.json
+─ app-config.yaml
+─ catalog-info.yaml
+─ lerna.json
+─ package.json
+```
+- Notice that there are several package.json, that’s because your Backstage instance is implemented as a monorepo. Thus, the frontend (app) and the backend (backend) have their own dependencies and can be deployed independently. To manage dependencies between the monorepo, Backstage uses lerna, hence the lerna.json file.
+- Notice as well the catalog-info.yaml file. Backstage uses this metadata file to add itself to the Software Catalog. Yes, Backstage wants to track every software asset in your organization, including itself!
+- At last, check out app-config.yaml. This is the main configuration file, where you can define your instance’s name and set options for the backend, authentication, and other integrations.
+- You already worked on the main configuration file, app-config.yaml, to set your organization name. But you’ll find app-config.local.yaml and app-config.production.yaml too, these are used in local and production environments, respectively. 
+- For now, you’ll be working with app-config.local.yaml. Backstage includes this file by default in .gitignore, which means nothing you put there will be committed nor pushed upstream. This can give you more peace of mind when putting secrets for local development there.
 
-- Backstage offers five core functionalities:
-1. software catalog
-2. software templates
-3. Techdocs
-4. a Kubernetes cluster visualizer
-5. cross-ecosystem search capabilities
 
 ## Components
-### 1- software catalog
+### 1-1 software catalog
 #### Intro
 - The Catalog’s objective is to map all software assets in your organization, including websites, APIs, libraries, and resources, in a centralized directory. This centralization is aimed at helping teams manage technology and enable discoverability. The Catalog tracks each asset's metadata, ownership, and dependencies, resulting in a software graph that surfaces orphaned entities.
 - The Catalog is flexible enough to host a wide variety of software assets, known as entities in Backstage. Because a website is very different from a data processing pipeline, entities can be differentiated by kind. Moreover, even within kinds of entities, you can define types.
@@ -154,7 +163,7 @@ Ownership
 - Ownership is typically defined in **spec.owner** of the owned entity, which describes the relationships **ownedBy**. **spec.owner** is a required field for all components, APIs, resources, systems, and domains you register in the Catalog. Each group or user will get a corresponding **ownerOf** relationship for each entity they own. 
 - If you already manage ownership in your repositories through CODEOWNERS, you can let Backstage use this reference instead of filling in the **spec.owner** field for the applicable entities. This feature is available through the CodeOwnersProcessor module of the Catalog.
 
-### 2- Scaffolder
+### 1-2 Scaffolder
 #### Intro
 - The Scaffolder provides your developers with the ability to execute software templates that initialize repositories with skeleton code and predefined settings.
 - The Scaffolder is a perfect place for new engineers to jump into the development process right away. You could, for example, set up a template to Create Node/React Website in your Scaffolder, which sets up a repository with CI/CD and analytics baked in from the beginning. When the new developers use the software template, they’ll get a deploy-ready service that will allow them to familiarize themselves with the tools and feel productive with a few clicks instead of having to wander aimlessly through your tech ecosystem. 
@@ -252,7 +261,7 @@ Defining Steps in a Software Template
 - Steps define the actions that are taken by the software template when it is run. The Scaffolder initially creates a temporary directory referred to as the workspace, in which files are downloaded, generated, updated, and pushed to some external system. Steps are executed in consecutive order according to the template definition.
 - Backstage ships with some useful actions, and you can define your own too. To check which actions are available in your instance and how to use them, go to the Create page, click on the top right context menu and then click on “Installed Actions”. On that page, you’ll find documentation for the actions that you can use in your steps and how to use them.
 
-### 3- TechDocs
+### 1-3 TechDocs
 #### Intro
 - a centralized hub for all their documentation
 - TechDocs is the framework’s documentation-as-code solution; it takes markdown files and transforms them into static pages
@@ -279,45 +288,24 @@ Writing TechDocs
 - For writing the documentation, you can use standard markdown. The Python library in charge of the generation complies with standard markdown syntax, with very minor differences. 
 - For linking files within your docs, you can use standard relative markdown links.
 
-### 4- k8s
-- he Kubernetes plugin is tied to the Catalog. It shows information about the clusters associated with a service registered in the catalog. To enable it, you must tell Backstage how to discover your clusters, whether that is by reading information that exists already in the Catalog or by fetching it directly from GKE or another custom Kubernetes cluster supplier.
-
-### 5- Search
+### 1-4 Search
 -  the most recent addition to Backstage’s framework.
 -  earch allows developers to find information across their ecosystem by leveraging your search engine of preference and lets you customize how things are indexed and presented to the user.
 -  Search is quite customizable. For starters, the plugin allows you to bring your own search engine, although ElasticSearch is the officially maintained engine. Search ships with a rudimentary query translator that turns the user’s input into a fully formed query, but you’re allowed to customize it to your engine and use cases better. You’re also welcome to customize the search results page and what each result looks like.
 -  Under the hood, Search searches “documents” that represent entities, documentation pages, or any other thing that you put into Backstage. These documents are consumed through streams exposed by a Collator. Collators define what can be found by defining, indexing, and collecting documents. Currently, collators are available for the Catalog, TechDocs, and Stack Overflow. You can define your collators too.
 
-## Structure
-When you navigate to the newly created directory, you’ll see the following structure:
-```
-─ packages
-    ├─ app
-            └─ package.json
-    └─ backend
-            └─ package.json
-─ app-config.yaml
-─ catalog-info.yaml
-─ lerna.json
-─ package.json
-```
-- Notice that there are several package.json, that’s because your Backstage instance is implemented as a monorepo. Thus, the frontend (app) and the backend (backend) have their own dependencies and can be deployed independently. To manage dependencies between the monorepo, Backstage uses lerna, hence the lerna.json file.
-- Notice as well the catalog-info.yaml file. Backstage uses this metadata file to add itself to the Software Catalog. Yes, Backstage wants to track every software asset in your organization, including itself!
-- At last, check out app-config.yaml. This is the main configuration file, where you can define your instance’s name and set options for the backend, authentication, and other integrations.
-- You already worked on the main configuration file, app-config.yaml, to set your organization name. But you’ll find app-config.local.yaml and app-config.production.yaml too, these are used in local and production environments, respectively. 
-- For now, you’ll be working with app-config.local.yaml. Backstage includes this file by default in .gitignore, which means nothing you put there will be committed nor pushed upstream. This can give you more peace of mind when putting secrets for local development there.
+### 1-5 k8s
+- he Kubernetes plugin is tied to the Catalog. It shows information about the clusters associated with a service registered in the catalog. To enable it, you must tell Backstage how to discover your clusters, whether that is by reading information that exists already in the Catalog or by fetching it directly from GKE or another custom Kubernetes cluster supplier.
 
-
+### 3- Plugins
 
 ---
-
-[Backstage Docs](https://backstage.io/docs/overview/what-is-backstage)
 
 ## Setup Backstage Development Environment
 
 ### Set up the repo
 
-1. Fork backstage into your GitHub user [Backstage repo](https://github.com/backstage/backstage)
+1. Fork backstage into your GitHub user 
 2. Clone the repo to your local workstation
 ```
 git clone git@github.com:backstage/backstage.git
@@ -514,6 +502,9 @@ $ export NODE_OPTIONS=--max-old-space-size=4096
 APA 🖖🏻
 
 ## Links
+- [Backstage repo](https://github.com/backstage/backstage)
+- [Backstage Docs](https://backstage.io/docs/overview/what-is-backstage)
+---
 - Platform Engineering Series : https://youtube.com/playlist?list=PLGVPcLSzJXQos1O18dvKoW2XSczz2I2lH&si=Jf4lDdaGW4GMLQYt
 - How to easily create standardised software templates with Backstage: https://b-nova.com/en/home/content/easily-create-standardised-software-templates-with-backstage/
 - Backstage by Example (Part 2): https://john-tucker.medium.com/backstage-by-example-part-2-b41cc12a5ad5
@@ -521,7 +512,6 @@ APA 🖖🏻
 ---
 - https://learning.edx.org/course/course-v1:LinuxFoundationX+LFS142x+3T2022/home
 - https://training.linuxfoundation.org/training/introduction-to-backstage-developer-portals-made-easy-lfs142x/
-- 
 ```                                                                                                       
   aaaaaaaaaaaaa  ppppp   ppppppppp     aaaaaaaaaaaaa   
   a::::::::::::a p::::ppp:::::::::p    a::::::::::::a  
