@@ -518,6 +518,51 @@ kubectl apply -f example-application
 $ export NODE_OPTIONS=--max-old-space-size=4096
 ```
 
+---
+
+## Draft
+
+## Cash
+- The Backstage backend and its built-in plugins are also able to leverage cache stores as a means of improving performance or reliability. Similar to how databases are supported, plugins receive logically separated cache connections, which are powered by Keyv under the hood.
+
+- At this time of writing, Backstage can be configured to use one of three cache stores: memory, which is mainly used for local testing, memcache or Redis, which are cache stores better suited for production deployment. The right cache store for your Backstage instance will depend on your own run-time constraints and those required of the plugins you're running.
+
+### Use memory for cache
+```
+backend:
+  cache:
+    store: memory
+```
+
+### Use memcache for cache
+```
+backend:
+  cache:
+    store: memcache
+    connection: user:pass@cache.example.com:11211
+```
+
+### Use Redis for cache
+```
+backend:
+  cache:
+    store: redis
+    connection: redis://user:pass@cache.example.com:6379
+    useRedisSets: true
+```
+The useRedisSets flag is explained here.
+
+## Containerization
+The backend container can be built by running the following command:
+```
+yarn run build
+yarn run build-image
+```
+This will create a container called ```example-backend```.
+
+
+---
+
 # acknowledgment
 ## Contributors
 
