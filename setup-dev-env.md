@@ -1,5 +1,14 @@
 
 # Setup Backstage Development Environment
+```
+ ______   _______  __   __    _______  __    _  __   __ 
+|      | |       ||  | |  |  |       ||  |  | ||  | |  |
+|  _    ||    ___||  |_|  |  |    ___||   |_| ||  |_|  |
+| | |   ||   |___ |       |  |   |___ |       ||       |
+| |_|   ||    ___||       |  |    ___||  _    ||       |
+|       ||   |___  |     |   |   |___ | | |   | |     | 
+|______| |_______|  |___|    |_______||_|  |__|  |___|  
+```
 
 Index
 
@@ -211,4 +220,33 @@ kubectl apply -f example-application
 - FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
 ```
 $ export NODE_OPTIONS=--max-old-space-size=4096
+```
+# acknowledgment
+## Contributors
+
+APA 🖖🏻
+
+## Links
+- Platform Engineering Series : https://youtube.com/playlist?list=PLGVPcLSzJXQos1O18dvKoW2XSczz2I2lH&si=Jf4lDdaGW4GMLQYt
+
+```                                                                                                       
+  aaaaaaaaaaaaa  ppppp   ppppppppp     aaaaaaaaaaaaa   
+  a::::::::::::a p::::ppp:::::::::p    a::::::::::::a  
+  aaaaaaaaa:::::ap:::::::::::::::::p   aaaaaaaaa:::::a 
+           a::::app::::::ppppp::::::p           a::::a 
+    aaaaaaa:::::a p:::::p     p:::::p    aaaaaaa:::::a 
+  aa::::::::::::a p:::::p     p:::::p  aa::::::::::::a 
+ a::::aaaa::::::a p:::::p     p:::::p a::::aaaa::::::a 
+a::::a    a:::::a p:::::p    p::::::pa::::a    a:::::a 
+a::::a    a:::::a p:::::ppppp:::::::pa::::a    a:::::a 
+a:::::aaaa::::::a p::::::::::::::::p a:::::aaaa::::::a 
+ a::::::::::aa:::ap::::::::::::::pp   a::::::::::aa:::a
+  aaaaaaaaaa  aaaap::::::pppppppp      aaaaaaaaaa  aaaa
+                  p:::::p                              
+                  p:::::p                              
+                 p:::::::p                             
+                 p:::::::p                             
+                 p:::::::p                             
+                 ppppppppp                             
+                                                       
 ```
