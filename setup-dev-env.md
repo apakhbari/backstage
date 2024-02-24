@@ -90,7 +90,7 @@ cd guy-backstage/
 yarn dev
 ```
 
-### Verify your application
+## Verify your application
 1. Go to the Backstage UI (should open automatically after the `yarn dev` command)
 2. Import a component using this file by going into [Register an existing component](http://localhost:3000/catalog-import) and import this file- `https://github.com/backstage/backstage/blob/master/catalog-info.yaml`
 3. Review the example component

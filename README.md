@@ -14,9 +14,9 @@
 2. Components
 3. Structure
 4. draft
-  - cache
-  - Containerization
-  - Plugins
+    - cache
+    - Containerization
+    - Plugins
 
 ## System Architecture
 1. Back End
