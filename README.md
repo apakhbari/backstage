@@ -48,14 +48,14 @@ Types of plugins:
 - proxy backed plugin: redirect to proxy, which fetch info from some service outside of this cluster/entity
 
 In Depth:
-### 1-1 software catalog
-#### Intro
+### 1-1 Core: software catalog
+#### software catalog - Intro
 - The Catalog’s objective is to map all software assets in your organization, including websites, APIs, libraries, and resources, in a centralized directory. This centralization is aimed at helping teams manage technology and enable discoverability. The Catalog tracks each asset's metadata, ownership, and dependencies, resulting in a software graph that surfaces orphaned entities.
 - The Catalog is flexible enough to host a wide variety of software assets, known as entities in Backstage. Because a website is very different from a data processing pipeline, entities can be differentiated by kind. Moreover, even within kinds of entities, you can define types.
 - The Catalog is powered by metadata stored in YAML files, which describe the kind, type, name, owner, and more details of a single entity per file. These files are commonly stored along their respective codebase, such that it gets updated frequently. Some entity kinds may have authoritative sources that are not represented in a codebase, for example, users and teams dictated by Okta.
 - Tracking ownership and dependencies is one of the strongest use cases for the Catalog. These are also declared in the YAML file describing a software component. Only a single team can be the component owner, and this team must be registered in the Catalog as an entity as well. As for dependencies, Backstage lets you define how the component depends on another entity and what it exposes so others can consume it.
 
-#### In Depth
+#### software catalog - In Depth
 Registering Components in the Catalog
 - The most common kind of entity that you’ll handle in your Backstage instance are components. Components refer to software components such as services, websites, and libraries that are typically linked to a repository whose code produces deployed instances or linkable artifacts. In Backstage, components are described with metadata in a YAML file that is stored in the repository where their code lives.
 - Backstage needs to know where those YAML files are located in order to add them to the Catalog.
@@ -152,15 +152,15 @@ Ownership
 - Ownership is typically defined in **spec.owner** of the owned entity, which describes the relationships **ownedBy**. **spec.owner** is a required field for all components, APIs, resources, systems, and domains you register in the Catalog. Each group or user will get a corresponding **ownerOf** relationship for each entity they own. 
 - If you already manage ownership in your repositories through CODEOWNERS, you can let Backstage use this reference instead of filling in the **spec.owner** field for the applicable entities. This feature is available through the CodeOwnersProcessor module of the Catalog.
 
-### 1-2 Scaffolder
-#### Intro
+### 1-2 Core: Scaffolder
+#### Scaffolder - Intro
 - The Scaffolder provides your developers with the ability to execute software templates that initialize repositories with skeleton code and predefined settings.
 - The Scaffolder is a perfect place for new engineers to jump into the development process right away. You could, for example, set up a template to Create Node/React Website in your Scaffolder, which sets up a repository with CI/CD and analytics baked in from the beginning. When the new developers use the software template, they’ll get a deploy-ready service that will allow them to familiarize themselves with the tools and feel productive with a few clicks instead of having to wander aimlessly through your tech ecosystem. 
 - A software template is defined in a YAML file that specifies parameters and steps to execute. Backstage will generate a UI in the Scaffolder based on the parameters that you specify in your software template. For the steps, you can leverage built-in actions for common fetch operations, but you can also define your own. 
 - Templates are stored in the Catalog under a template kind. Furthermore, all components initialized by the Scaffolder are automatically added to the Catalog. Therefore, there’s a virtuous cycle between the Scaffolder and the Catalog that promotes discoverability and standardization.
 
 
-#### In Depth
+#### Scaffolder - In Depth
 - The Scaffolder enables you to provide software templates to your teams. Software templates are composed of a YAML definition and, typically, a skeleton directory. You can define the parameters that will be asked from the user and the steps that the template will execute. The community templates can help you get ideas of the templates' potential.
 - Software templates are defined using YAML files and are registered in Backstage the same way other entities are. Software templates are defined by setting the entity kind to template, which requires parameters and steps to be declared.
 - Let’s review a Hello world template to illustrate how templates are defined.
@@ -250,13 +250,13 @@ Defining Steps in a Software Template
 - Steps define the actions that are taken by the software template when it is run. The Scaffolder initially creates a temporary directory referred to as the workspace, in which files are downloaded, generated, updated, and pushed to some external system. Steps are executed in consecutive order according to the template definition.
 - Backstage ships with some useful actions, and you can define your own too. To check which actions are available in your instance and how to use them, go to the Create page, click on the top right context menu and then click on “Installed Actions”. On that page, you’ll find documentation for the actions that you can use in your steps and how to use them.
 
-### 1-3 TechDocs
-#### Intro
+### 1-3 Core: TechDocs
+#### Scaffolder - Intro
 - a centralized hub for all their documentation
 - TechDocs is the framework’s documentation-as-code solution; it takes markdown files and transforms them into static pages
 - TechDocs follows the same principle as the Catalog metadata files: stay close to the source code to stay accurate. TechDocs are written as markdown files in the repository where the entity that they document is kept. Then, the TechDocs Backstage plugin fetches these files from all services, generates static pages, and publishes them.
 
-#### In Depth
+#### Scaffolder - In Depth
 - he TechDocs plugin lets you add documentation for your software components directly into their corresponding entity page in Backstage. TechDocs is based on markdown files stored alongside the code that they document to make it easier for developers to keep it up to date. TechDocs allows you to define navigation and pages, which will be made available under the “Docs” tab of its associated component.
 - Docs are associated with a component when their YAML file includes the backstage.io/techdocs-ref annotation. The annotation tells Backstage that there are docs available that it should show to the user.
 
@@ -277,13 +277,13 @@ Writing TechDocs
 - For writing the documentation, you can use standard markdown. The Python library in charge of the generation complies with standard markdown syntax, with very minor differences. 
 - For linking files within your docs, you can use standard relative markdown links.
 
-### 1-4 Search
+### 1-4 Core: Search
 -  the most recent addition to Backstage’s framework.
 -  earch allows developers to find information across their ecosystem by leveraging your search engine of preference and lets you customize how things are indexed and presented to the user.
 -  Search is quite customizable. For starters, the plugin allows you to bring your own search engine, although ElasticSearch is the officially maintained engine. Search ships with a rudimentary query translator that turns the user’s input into a fully formed query, but you’re allowed to customize it to your engine and use cases better. You’re also welcome to customize the search results page and what each result looks like.
 -  Under the hood, Search searches “documents” that represent entities, documentation pages, or any other thing that you put into Backstage. These documents are consumed through streams exposed by a Collator. Collators define what can be found by defining, indexing, and collecting documents. Currently, collators are available for the Catalog, TechDocs, and Stack Overflow. You can define your collators too.
 
-### 1-5 k8s
+### 1-5 Core: k8s
 - he Kubernetes plugin is tied to the Catalog. It shows information about the clusters associated with a service registered in the catalog. To enable it, you must tell Backstage how to discover your clusters, whether that is by reading information that exists already in the Catalog or by fetching it directly from GKE or another custom Kubernetes cluster supplier.
 
 Categories of Plugins
@@ -311,7 +311,7 @@ Installing Plugins in Backstage
 - Finally, most plugins will require you to add their UI into your instance’s frontend using React. For example, adding a link in a navigation menu, or a widget on the entity page. Some plugins allow you to customize these widgets by passing props into them. 
 
 ## Structure
-### Simple
+### Structure - Simple
 When you navigate to the newly created directory, you’ll see the following structure:
 ```
 ─ packages
@@ -329,7 +329,7 @@ When you navigate to the newly created directory, you’ll see the following str
 - At last, check out app-config.yaml. This is the main configuration file, where you can define your instance’s name and set options for the backend, authentication, and other integrations.
 - You already worked on the main configuration file, app-config.yaml, to set your organization name. But you’ll find app-config.local.yaml and app-config.production.yaml too, these are used in local and production environments, respectively. 
 - For now, you’ll be working with app-config.local.yaml. Backstage includes this file by default in .gitignore, which means nothing you put there will be committed nor pushed upstream. This can give you more peace of mind when putting secrets for local development there.
-### In Depth
+### Structure - In Depth
 #### General purpose files and folders
 In the project root, there are a set of files and folders which are not part of the project as such, and may or may not be familiar to someone looking through the code.
 
