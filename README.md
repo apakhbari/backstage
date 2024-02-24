@@ -584,7 +584,7 @@ $ export NODE_OPTIONS=--max-old-space-size=4096
 
 ## Draft
 
-## Cash
+## cache
 - The Backstage backend and its built-in plugins are also able to leverage cache stores as a means of improving performance or reliability. Similar to how databases are supported, plugins receive logically separated cache connections, which are powered by Keyv under the hood.
 
 - At this time of writing, Backstage can be configured to use one of three cache stores: memory, which is mainly used for local testing, memcache or Redis, which are cache stores better suited for production deployment. The right cache store for your Backstage instance will depend on your own run-time constraints and those required of the plugins you're running.
