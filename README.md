@@ -16,7 +16,7 @@
 4. Structure
 5. Backstage Threat Model
 6. Authentication
-7. For Developing Plugin
+7. For Developing Plugins
 8. To Be Organized Later
     - cache
     - Containerization
@@ -465,11 +465,42 @@ microsite/ - This folder contains the source code for backstage.io. It is built 
 
 > NOTE: You can configure sign-in to use a redirect flow with no pop-up by adding enableExperimentalRedirectFlow: true to the root of your app-config.yaml
 
+#### sign-in in backend
+- By default, every Backstage auth provider is configured only for the use-case of access delegation. This enables Backstage to request resources and actions from external systems on behalf of the user, for example re-triggering a build in CI.
+- If you want to use an auth provider to sign in users, you need to explicitly configure it have sign-in enabled and also tell it how the external identities should be mapped to user identities within Backstage.
+
+##### Backstage User Identity
+- A user identity within Backstage is built up from two pieces of information:
+1. a user entity reference
+2. a set of ownership entity references
+- When a user signs in, a Backstage token is generated with these two pieces of information, which is then used to identify the user within the Backstage ecosystem.
+
+- The user entity reference should uniquely identify the logged in user in Backstage. It is encouraged that a matching user entity also exists within the Software Catalog, but it is not required. If the user entity exists in the catalog it can be used to store additional data about the user. There may even be some plugins that require this for them to be able to function.
+
+- The ownership references are also entity references, and it is likewise encouraged that these entities exist within the catalog, but it is not a requirement. The ownership references are used to determine what the user owns, as a set of references that the user claims ownership though. For example, a user Jane (`user:default/jane`) might have the ownership references `user:default/jane`, `group:default/team-a`, and `group:default/admins`. Given these ownership claims, any entity that is marked as owned by either of `user:jane`, `team-a`, or `admins` would be considered owned by Jane.
+
+- The ownership claims often contain the user entity reference itself, but it is not required. It is also worth noting that the ownership claims can also be used to resolve other relations similar to ownership, such as a claim for a `maintainer` or `operator` status.
+
+- The Backstage token that encapsulates the user identity is a JWT. The user entity reference is stored in the sub claim of the payload, while the ownership references are stored in a custom ent claim. Both the user and ownership references should always be full entity references, as opposed to shorthands like just jane or user:jane.
+
+##### Sign-in Resolvers
+- Signing in a user into Backstage requires a mapping of the user identity from the third-party auth provider to a Backstage user identity. This mapping can vary quite a lot between different organizations and auth providers, and because of that there's no default way to resolve user identities. The auth provider that one wants to use for sign-in must instead be configured with a sign-in resolver, which is a function that is responsible for creating this user identity mapping.
+- The input to the sign-in resolver function is the result of a successful log in with the given auth provider, as well as a context object that contains various helpers for looking up users and issuing tokens. There are also a number of built-in sign-in resolvers that can be used, which are covered a bit further down.
+- Note that while it possible to configure multiple auth providers to be used for sign-in, you should take care when doing so. It is best to make sure that the different auth providers either do not have any user overlap, or that any users that are able to log in with multiple providers always end up with the same Backstage identity.
+- 
+
 ## For Developing Plugins
 ### Identity for Plugin Developers
 - For plugin developers, there is one main touchpoint for accessing the user identity: the `IdentityApi` exported by `@backstage/core-plugin-api` via the `identityApiRef`.
 - The `IdentityApi` gives access to the signed-in user's identity in the frontend. It provides access to the user's entity reference, lightweight profile information, and a Backstage token that identifies the user when making authenticated calls within Backstage.
 - When making calls to backend plugins, we recommend that the `FetchApi` is used, which is exported via the `fetchApiRef` from `@backstage/core-plugin-api`. The `FetchApi` will automatically include a Backstage token in the request, meaning there is no need to interact directly with the `IdentityApi`.
+
+### Accessing Third Party Resources
+- A common pattern for talking to third party services in Backstage is user-to-server requests, where short-lived OAuth Access Tokens are requested by plugins to authenticate calls to external services. These calls can be made either directly to the services or through a backend plugin or service.
+
+- By relying on user-to-server calls we keep the coupling between the frontend and backend low, and provide a much lower barrier for plugins to make use of third party services. This is in comparison to for example a session-based system, where access tokens are stored server-side. Such a solution would require a much deeper coupling between the auth backend plugin, its session storage, and other backend plugins or separate services. A goal of Backstage is to make it as easy as possible to create new plugins, and an auth solution based on user-to-server OAuth helps in that regard.
+
+- The method with which frontend plugins request access to third party services is through Utility APIs for each service provider. These are all suffixed with `*AuthApiRef`, for example `githubAuthApiRef`. For a full list of providers, see the @backstage/core-plugin-api reference.
 
 ---
 
