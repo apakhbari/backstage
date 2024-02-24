@@ -9,6 +9,16 @@
 |_______||__| |__||_______||___| |_||_______|  |___|  |__| |__||_______||_______|
 ```
 
+## Index
+1. System Architecture
+2. Components
+3. Structure
+4. Setup Backstage Development Environment
+5. draft
+  - cache
+  - Containerization
+  - Plugins
+
 ## System Architecture
 1. Back End
 2. Front End
@@ -38,89 +48,7 @@ Types of plugins:
 - Service backed Plugins: Service is in same cluster/entity. deployed on different service in same system
 - proxy backed plugin: redirect to proxy, which fetch info from some service outside of this cluster/entity
 
-## Structure
-### Simple
-When you navigate to the newly created directory, you’ll see the following structure:
-```
-─ packages
-    ├─ app
-            └─ package.json
-    └─ backend
-            └─ package.json
-─ app-config.yaml
-─ catalog-info.yaml
-─ lerna.json
-─ package.json
-```
-- Notice that there are several package.json, that’s because your Backstage instance is implemented as a monorepo. Thus, the frontend (app) and the backend (backend) have their own dependencies and can be deployed independently. To manage dependencies between the monorepo, Backstage uses lerna, hence the lerna.json file.
-- Notice as well the catalog-info.yaml file. Backstage uses this metadata file to add itself to the Software Catalog. Yes, Backstage wants to track every software asset in your organization, including itself!
-- At last, check out app-config.yaml. This is the main configuration file, where you can define your instance’s name and set options for the backend, authentication, and other integrations.
-- You already worked on the main configuration file, app-config.yaml, to set your organization name. But you’ll find app-config.local.yaml and app-config.production.yaml too, these are used in local and production environments, respectively. 
-- For now, you’ll be working with app-config.local.yaml. Backstage includes this file by default in .gitignore, which means nothing you put there will be committed nor pushed upstream. This can give you more peace of mind when putting secrets for local development there.
-### In Depth
-#### General purpose files and folders
-In the project root, there are a set of files and folders which are not part of the project as such, and may or may not be familiar to someone looking through the code.
-
-- **.changeset/** - This folder contains files outlining which changes occurred in the project since the last release. These files are added manually, but managed by changesets and will be removed at every new release. They are essentially building-blocks of a CHANGELOG.
-- **.github/** - Standard GitHub folder. It contains - amongst other things - our workflow definitions and templates. Worth noting is the vale sub-folder which is used for a markdown spellchecker.
-- **.yarn/** - Backstage ships with its own yarn implementation. This allows us to have better control over our yarn.lock file and hopefully avoid problems due to yarn versioning differences.
-- **contrib/** - Collection of examples or resources contributed by the community. We really appreciate contributions in here and encourage them being kept up to date.
-- **docs/** - This is where we keep all of our documentation Markdown files. These end up on https://backstage.io/docs. Just keep in mind that changes to the sidebars.json file may be needed as sections are added/removed.
-- **.editorconfig** - A configuration file used by most common code editors. Learn more at EditorConfig.org.
-- **.imgbotconfig** - Configuration for a bot which helps reduce image sizes.
-
-#### Monorepo packages
-```
- "workspaces": {
-    "packages": [
-      "packages/*",
-      "plugins/*"
-    ]
-  },
-```
-Let's look at them individually.
-
-#### packages/
-These are all the packages that we use within the project. Plugins are separated out into their own folder, see further down.
-
-- **app/** - This is our take on how an App could look like, bringing together a set of packages and plugins into a working Backstage App. This is not a published package, and the main goals are to provide a demo of what an App could look like and to enable local development.
-- **backend/** - Every standalone Backstage project will have both an app and a backend package. The backend uses plugins to construct a working backend that the frontend (app) can use.
-- **backend-common/** - There are no "core" packages in the backend. Instead we have backend-common which contains helper middleware and other utils.
-- **catalog-client** - An isomorphic client to interact with the Software Catalog. Backend plugins can use the package directly. Frontend plugins can use the client by using @backstage/plugin-catalog in combination with useApi and the catalogApiRef.
-- **catalog-model/** - You can consider this to be a library for working with the catalog of sorts. It contains the definition of an Entity, as well as validation and other logic related to it. This package can be used in both the frontend and the backend.
-- **cli/** - One of the biggest packages in our project, the cli is used to build, serve, diff, create plugins and more. In the early days of this project, we started out with calling tools directly - such as eslint - through package.json. But as it was tricky to have a good development experience around that when we change named tooling, we opted for wrapping those in our own CLI. That way everything looks the same in package.json. Much like react-scripts.
-- **cli-common/** - This package mainly handles path resolving. It is a separate package to reduce bugs in CLI. We also want as few dependencies as possible to reduce download time when running the CLI which is another reason this is a separate package.
-- **config/** - The way we read configuration data. This package can take a bunch of config objects and merge them together. app-config.yaml is an example of an config object.
-- **config-loader/** - This package is used to read config objects. It does not know how to merge, but only reads files and passes them on to the config. As this part is only used by the backend, we chose to separate config and config-loader into two different packages.
-- **core-app-api/** - This package contains the core APIs that are used to wire together Backstage apps.
-- **core-components/** - This package contains our visual React components, some of which you can find in plugin examples. (https://backstage.io/storybook/?path=/story/plugins-examples--plugin-with-data)
-- **core-plugin-api/** - This package contains the core APIs that are used to build Backstage plugins.
-- **create-app/** - An CLI to specifically scaffold a new Backstage App. It does so by using a template.
-- **dev-utils/** - Helps you setup a plugin for isolated development so that it can be served separately.
-- **e2e-test/** - Another CLI that can be run to try out what would happen if you build all the packages, publish them, create a new app, and then run them. CI uses this for e2e-tests.
-- **integration/** - Common functionalities of integrations like GitHub, GitLab, etc.
-- **storybook/** - This folder contains only the Storybook config which helps visualize our reusable React components. Stories are within the core package, and are published in the Backstage Storybook.
-- **techdocs-node/** - Common node.js functionalities for TechDocs, to be shared between techdocs-backend plugin and techdocs-cli.
-- **test-utils/** - This package contains general purpose testing facilities for testing a Backstage App or its plugins.
-- **theme/** - Holds the Backstage Theme.
-
-#### plugins/
-- Most of the functionality of a Backstage App comes from plugins. Even core features can be plugins, take the catalog as an example.
-- We can categorize plugins into three different types:
-1. Frontend
-2. Backend
-3. GraphQL
-
-- We differentiate these types of plugins when we name them, with a dash-suffix. -backend means it’s a backend plugin and so on.
-- One reason for splitting a plugin is because of its dependencies. Another reason is for clear separation of concerns.
-- Take a look at our Plugin Directory or browse through the plugins/ folder.
-
-#### Packages outside of the monorepo
-For convenience we include packages in our project that are not part of our monorepo setup.
-
-microsite/ - This folder contains the source code for backstage.io. It is built with Docusaurus. This folder is not part of the monorepo due to dependency reasons. Look at the microsite README for instructions on how to run it locally.
-
-## Components
+In Depth:
 ### 1-1 software catalog
 #### Intro
 - The Catalog’s objective is to map all software assets in your organization, including websites, APIs, libraries, and resources, in a centralized directory. This centralization is aimed at helping teams manage technology and enable discoverability. The Catalog tracks each asset's metadata, ownership, and dependencies, resulting in a software graph that surfaces orphaned entities.
@@ -382,6 +310,88 @@ Installing Plugins in Backstage
 - Other than adding the plugin’s packages into your instance, feature plugins usually require you to set up information in the entities’ YAML files. For example, adding documentation annotations for TechDocs in each YAML file.
 -  In the case of integration plugins, after you have added their packages to your instance, you’ll need to authorize Backstage to access the third-party service. The most common way to do this is via an authorization token for your instance to access the third-party API. 
 - Finally, most plugins will require you to add their UI into your instance’s frontend using React. For example, adding a link in a navigation menu, or a widget on the entity page. Some plugins allow you to customize these widgets by passing props into them. 
+
+## Structure
+### Simple
+When you navigate to the newly created directory, you’ll see the following structure:
+```
+─ packages
+    ├─ app
+            └─ package.json
+    └─ backend
+            └─ package.json
+─ app-config.yaml
+─ catalog-info.yaml
+─ lerna.json
+─ package.json
+```
+- Notice that there are several package.json, that’s because your Backstage instance is implemented as a monorepo. Thus, the frontend (app) and the backend (backend) have their own dependencies and can be deployed independently. To manage dependencies between the monorepo, Backstage uses lerna, hence the lerna.json file.
+- Notice as well the catalog-info.yaml file. Backstage uses this metadata file to add itself to the Software Catalog. Yes, Backstage wants to track every software asset in your organization, including itself!
+- At last, check out app-config.yaml. This is the main configuration file, where you can define your instance’s name and set options for the backend, authentication, and other integrations.
+- You already worked on the main configuration file, app-config.yaml, to set your organization name. But you’ll find app-config.local.yaml and app-config.production.yaml too, these are used in local and production environments, respectively. 
+- For now, you’ll be working with app-config.local.yaml. Backstage includes this file by default in .gitignore, which means nothing you put there will be committed nor pushed upstream. This can give you more peace of mind when putting secrets for local development there.
+### In Depth
+#### General purpose files and folders
+In the project root, there are a set of files and folders which are not part of the project as such, and may or may not be familiar to someone looking through the code.
+
+- **.changeset/** - This folder contains files outlining which changes occurred in the project since the last release. These files are added manually, but managed by changesets and will be removed at every new release. They are essentially building-blocks of a CHANGELOG.
+- **.github/** - Standard GitHub folder. It contains - amongst other things - our workflow definitions and templates. Worth noting is the vale sub-folder which is used for a markdown spellchecker.
+- **.yarn/** - Backstage ships with its own yarn implementation. This allows us to have better control over our yarn.lock file and hopefully avoid problems due to yarn versioning differences.
+- **contrib/** - Collection of examples or resources contributed by the community. We really appreciate contributions in here and encourage them being kept up to date.
+- **docs/** - This is where we keep all of our documentation Markdown files. These end up on https://backstage.io/docs. Just keep in mind that changes to the sidebars.json file may be needed as sections are added/removed.
+- **.editorconfig** - A configuration file used by most common code editors. Learn more at EditorConfig.org.
+- **.imgbotconfig** - Configuration for a bot which helps reduce image sizes.
+
+#### Monorepo packages
+```
+ "workspaces": {
+    "packages": [
+      "packages/*",
+      "plugins/*"
+    ]
+  },
+```
+Let's look at them individually.
+
+#### packages/
+These are all the packages that we use within the project. Plugins are separated out into their own folder, see further down.
+
+- **app/** - This is our take on how an App could look like, bringing together a set of packages and plugins into a working Backstage App. This is not a published package, and the main goals are to provide a demo of what an App could look like and to enable local development.
+- **backend/** - Every standalone Backstage project will have both an app and a backend package. The backend uses plugins to construct a working backend that the frontend (app) can use.
+- **backend-common/** - There are no "core" packages in the backend. Instead we have backend-common which contains helper middleware and other utils.
+- **catalog-client** - An isomorphic client to interact with the Software Catalog. Backend plugins can use the package directly. Frontend plugins can use the client by using @backstage/plugin-catalog in combination with useApi and the catalogApiRef.
+- **catalog-model/** - You can consider this to be a library for working with the catalog of sorts. It contains the definition of an Entity, as well as validation and other logic related to it. This package can be used in both the frontend and the backend.
+- **cli/** - One of the biggest packages in our project, the cli is used to build, serve, diff, create plugins and more. In the early days of this project, we started out with calling tools directly - such as eslint - through package.json. But as it was tricky to have a good development experience around that when we change named tooling, we opted for wrapping those in our own CLI. That way everything looks the same in package.json. Much like react-scripts.
+- **cli-common/** - This package mainly handles path resolving. It is a separate package to reduce bugs in CLI. We also want as few dependencies as possible to reduce download time when running the CLI which is another reason this is a separate package.
+- **config/** - The way we read configuration data. This package can take a bunch of config objects and merge them together. app-config.yaml is an example of an config object.
+- **config-loader/** - This package is used to read config objects. It does not know how to merge, but only reads files and passes them on to the config. As this part is only used by the backend, we chose to separate config and config-loader into two different packages.
+- **core-app-api/** - This package contains the core APIs that are used to wire together Backstage apps.
+- **core-components/** - This package contains our visual React components, some of which you can find in plugin examples. (https://backstage.io/storybook/?path=/story/plugins-examples--plugin-with-data)
+- **core-plugin-api/** - This package contains the core APIs that are used to build Backstage plugins.
+- **create-app/** - An CLI to specifically scaffold a new Backstage App. It does so by using a template.
+- **dev-utils/** - Helps you setup a plugin for isolated development so that it can be served separately.
+- **e2e-test/** - Another CLI that can be run to try out what would happen if you build all the packages, publish them, create a new app, and then run them. CI uses this for e2e-tests.
+- **integration/** - Common functionalities of integrations like GitHub, GitLab, etc.
+- **storybook/** - This folder contains only the Storybook config which helps visualize our reusable React components. Stories are within the core package, and are published in the Backstage Storybook.
+- **techdocs-node/** - Common node.js functionalities for TechDocs, to be shared between techdocs-backend plugin and techdocs-cli.
+- **test-utils/** - This package contains general purpose testing facilities for testing a Backstage App or its plugins.
+- **theme/** - Holds the Backstage Theme.
+
+#### plugins/
+- Most of the functionality of a Backstage App comes from plugins. Even core features can be plugins, take the catalog as an example.
+- We can categorize plugins into three different types:
+1. Frontend
+2. Backend
+3. GraphQL
+
+- We differentiate these types of plugins when we name them, with a dash-suffix. -backend means it’s a backend plugin and so on.
+- One reason for splitting a plugin is because of its dependencies. Another reason is for clear separation of concerns.
+- Take a look at our Plugin Directory or browse through the plugins/ folder.
+
+#### Packages outside of the monorepo
+For convenience we include packages in our project that are not part of our monorepo setup.
+
+microsite/ - This folder contains the source code for backstage.io. It is built with Docusaurus. This folder is not part of the monorepo due to dependency reasons. Look at the microsite README for instructions on how to run it locally.
 
 ---
 
