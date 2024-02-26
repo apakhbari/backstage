@@ -26,6 +26,36 @@
 2. Creating new components through Backstage
 3. Integrating with an external source
 
+#### 1. Manually register components
+- Users can register new components by going to /create and clicking the REGISTER EXISTING COMPONENT button. Backstage expects the full URL to the YAML in your source control. It is important to note that any kind of software can be registered in Backstage. Even if the software is not maintained by your company (SaaS offering, for example) it is still useful to create components for tracking ownership.
+
+#### 2. Creating new components through Backstage
+- All software created through the Backstage Software Templates are automatically registered in the catalog.
+
+#### 3. Static catalog configuration
+In addition to manually registering components, it is also possible to register components through **static configuration**. For example, the above example can be added using the following configuration:‍
+```
+catalog:
+  locations:
+    - type: url
+      target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/components/artist-lookup-component.yaml
+```
+
+### Updating component metadata
+- Teams owning the components are responsible for maintaining the metadata about them, and do so using their normal Git workflow.
+- Once the change has been merged, Backstage will automatically show the updated metadata in the software catalog after a short while.
+
+### Finding software in the catalog
+- By default the software catalog shows components owned by the team of the logged in user. But you can also switch to All to see all the components across your company's software ecosystem. Basic inline search and column filtering makes it easy to browse a big set of components.
+
+### Starring components
+- For easy and quick access to components you visit frequently, Backstage supports starring of components:
+
+### Integrated tooling through plugins
+- The software catalog is a great way to organize the infrastructure tools you use to manage the software. This is how Backstage creates one developer portal for all your tools. Rather than asking teams to jump between different infrastructure UIs (and incurring additional cognitive overhead each time they make a context switch), most of these tools can be organized around the entities in the catalog.
+
+## The Life of an Entity
+### Key Concepts
 
 # acknowledgment
 ## Contributors
