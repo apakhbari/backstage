@@ -280,6 +280,7 @@ catalog:
 
 - Setting this value too low risks exhausting rate limits on external systems that are queried by processors, such as version control systems housing catalog-info files.
 
+## System Model
 
 
 # acknowledgment
