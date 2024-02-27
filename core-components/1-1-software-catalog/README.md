@@ -74,6 +74,20 @@ An entity is not visible to the outside world (through the catalog API), until i
 IMG
 ![life-of-an-entity_overview.svg](./images/life-of-an-entity_overview.svg)
 
+#### Ingestion
+
+#### Processing
+
+#### Stitching
+
+#### Errors
+
+#### Orphaning
+
+#### Implicit Deletion
+
+#### Explicit Deletion
+
 # acknowledgment
 ## Contributors
 
