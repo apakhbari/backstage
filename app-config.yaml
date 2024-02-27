@@ -1,0 +1,4 @@
+# The reason that the orphaning mechanism exists instead of having an eager deletion triggered, is safety.
+# if you want to delete orphaned entities automatically anyway, you can enable the automated clean up
+catalog:
+  orphanStrategy: delete 
