@@ -76,9 +76,21 @@ IMG
 
 #### Ingestion
 
+IMG
+![life-of-an-entity_ingestion.svg](./images/life-of-an-entity_ingestion.svg)
+
+
 #### Processing
 
+IMG
+![life-of-an-entity_processing.svg](./images/life-of-an-entity_processing.svg)
+
+
 #### Stitching
+
+IMG
+![life-of-an-entity_stitching.svg](./images/life-of-an-entity_stitching.svg)
+
 
 #### Errors
 
