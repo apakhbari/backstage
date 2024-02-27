@@ -24,7 +24,7 @@
 - There are 3 ways to add components to the catalog:
 1. Manually register components
 2. Creating new components through Backstage
-3. Integrating with an external source
+3. Integrating with an external source 
 
 #### 1. Manually register components
 - Users can register new components by going to /create and clicking the REGISTER EXISTING COMPONENT button. Backstage expects the full URL to the YAML in your source control. It is important to note that any kind of software can be registered in Backstage. Even if the software is not maintained by your company (SaaS offering, for example) it is still useful to create components for tracking ownership.
@@ -56,6 +56,21 @@ catalog:
 
 ## The Life of an Entity
 ### Key Concepts
+- The catalog forms a hub of sorts, where entities are ingested from various authoritative sources and held in a database, subject to automated processing, and then presented through an API for quick and easy access by Backstage and others. The most common source is YAML files on a standard format, living in version control systems near the source code of systems that they describe. Those files are registered with the catalog and maintained by the respective owners. The catalog makes sure to keep itself up to date with changes to those files.
+
+- The main extension points where developers can customize the catalog are:
+1. **Entity providers**, that feed initial raw entity data into the catalog,
+2. **Policies**, that establish baseline rules about the shape of entities,
+3. **Processors**, that validate, analyze, and mutate the raw entity data into its final form.
+
+- The high level processes involved are:
+1. **Ingestion**, where entity providers fetch raw entity data from external sources and seed it into the database,
+2. **Processing**, where the policies and processors continually treat the ingested data and may emit both other raw entities (that are also subject to processing), errors, relations to other entities, etc.,
+3. **Stitching**, where all of the data emitted by various processors are assembled together into the final output entity.
+An entity is not visible to the outside world (through the catalog API), until it has passed through the last process and landed among the final entities.
+
+-An entity is not visible to the outside world (through the catalog API), until it has passed through the last process and landed among the final entities.
+
 
 # acknowledgment
 ## Contributors
