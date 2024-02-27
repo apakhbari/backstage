@@ -71,6 +71,8 @@ An entity is not visible to the outside world (through the catalog API), until i
 
 -An entity is not visible to the outside world (through the catalog API), until it has passed through the last process and landed among the final entities.
 
+IMG
+![life-of-an-entity_overview.svg](./images/life-of-an-entity_overview.svg)
 
 # acknowledgment
 ## Contributors
