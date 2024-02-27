@@ -74,7 +74,7 @@ An entity is not visible to the outside world (through the catalog API), until i
 IMG
 ![life-of-an-entity_overview.svg](./images/life-of-an-entity_overview.svg)
 
-#### Ingestion
+### Ingestion
 - Each catalog deployment has a number of entity providers installed. They are responsible for fetching data from external authoritative sources in any way that they see fit, translating those into entity objects, and notifying the database when those entities are added or removed. These are the **unprocessed** entities that will be subject to later processing (see below), and they form the very basis of existence for entities. If there were no entity providers, no entities would ever enter the system.
 
 - The database always keeps track of the set of entities that belong to each provider; no two providers can try to output the same entity. And when a provider signals the removal of an entity, then that leads to an **eager deletion**: the entity and all auxiliary data that it has led to in the database is immediately purged.
@@ -82,7 +82,7 @@ IMG
 IMG
 ![life-of-an-entity_ingestion.svg](./images/life-of-an-entity_ingestion.svg)
 
-- **2 default providers**:
+#### 2 default providers:
 1. The one that deals with user registered locations (e.g. URLs to YAML files)
 2. The one that deals with static locations in the app-config.
 
@@ -96,7 +96,7 @@ IMG
 
 - The entities that are emitted get some coarse validation applied to them, to ensure that they at least adhere to the most basic schema rules about how an entity should be shaped. For example, they need to have a kind, a metadata.name, and optionally a metadata.namespace, among others. Apart from that, the ingestion stage considers its work done, and stores the unprocessed entities to be picked up at a later time by the processing system. This means that the more precise validation rules that you put in place on entities are _not yet_ applied at this stage.
 
-#### Processing
+### Processing
 - Every unprocessed entity comes with a timestamp, which tells at what time that the processing loop should next try to process it. When the entity first appears, this timestamp is set to "now" - asking for it to be picked up as soon as possible.
 
 - Each catalog deployment has a number of processors installed. They are responsible for receiving unprocessed entities that the catalog decided are due for processing, and then running that data through a number of processing stages, mutating the entity and emitting auxiliary data about it. When all of that is done, the catalog takes all of that information and stores it as the processed entity, and errors and relations to other entities separately. Then, the catalog checks to see what entities are touched by that output, and triggers the final assembly of those (see Stitching below).
@@ -115,8 +115,8 @@ IMG
 - It is worth noting here that the processing does not lead to deletion or unregistration of entities; it can only call new entities into existence or update entities that it has previously called into existence. More about that later.
 
 
-#### Stitching
-- IMPORTANT: The stitching is currently a fixed process, that cannot be modified or extended. This means that any modifications you want to make on the final result, has to happen during ingestion or processing.
+### Stitching
+- **_IMPORTANT_**: The stitching is currently a fixed process, that cannot be modified or extended. This means that any modifications you want to make on the final result, has to happen during ingestion or processing.
 
 - Stitching finalizes the entity, by gathering all of the output from the previous steps and merging them into the final object which is what is visible from the catalog API. As the final entity itself gets updated, the stitcher makes sure that the search table gets refreshed accordingly as well.
 
@@ -132,7 +132,7 @@ IMG
  
 - The last part is noteworthy: This is how the stitcher is able to collect all of the relation edges, both incoming and outgoing, no matter who produced them.
 
-#### Errors
+### Errors
 - Errors during the ingestion and processing of entities can happen in a variety of ways, and they may happen at a far later point in time than when they were registered. For example, a registered file may get deleted in the remote system, or the user may accidentally change the file contents in such a way that they cannot be parsed successfully, etc.
 
 - There are two main ways that these errors are surfaced.
@@ -140,7 +140,7 @@ IMG
 1. The catalog backend will produce detailed logs that should contain sufficient information for a reader to find the causes for errors. Since these logs are typically not easily found by end users, this can mainly be a useful tool for Backstage operators who want to debug problems either with statically registered entities that are under their control, or to help end users find problems.
 2. For most classes of errors, the entity itself will contain a status field that describes the problem. The contents of this field is shown at the top of your entity page in Backstage, if you have placed the corresponding error callout component (`EntityProcessingErrorsPanel`) there.
 
-#### Orphaning
+### Orphaning
 - As mentioned earlier, entities internally form a graph. The edges go from processed parent entities, to child entities emitted while processing the parent.
 
 - The processing loop runs continuously, so these edges are reconsidered over time. If processing a parent entity no longer emits a given child entity, then that former edge is severed. If that child has no other edges pointing at it either, it becomes orphaned. The end result is as follows:
@@ -165,9 +165,37 @@ catalog:
   orphanStrategy: delete
 ```
 
-#### Implicit Deletion
+### Implicit Deletion
+- Entity providers - not processors - are subject to eager deletion of entities, which may trigger the implicit deletion of more than just the entity you thought you were deleting. This concept is explained here.
+- Recall that all entity providers manage a private "bucket" of entities. They can perform some operations on those entities, including additions, updates, and deletions. Entity additions/updates are subject to the regular processing loops, which means that bucket entities may end up forming roots of an entire graph of entities that are emitted by those processors as they recursively work they way through the bucket contents and its descendants.
+- When a provider issues a deletion of an entity in its bucket, that entity as well as the entire tree of entities processed out of it, if any, are considered for immediate deletion. Note "considered" - they are deleted if and only if they would otherwise have become orphaned (no other parent entities emitting them). Since the graph of entities is not strictly a tree, multiple roots may actually end up indirectly referencing a node farther down in the graph. If that's the case, that node won't go away until all such roots go away.
 
-#### Explicit Deletion
+- URLs to yaml files that you register using either the Create button or add to your app-config, are both handled by entity providers. That means that this implicit deletion mechanism comes into play in some everyday circumstances. Let's illustrate.
+
+- Imagine that you have a monorepo, with a single `Location` entity in a catalog-info file at the root, and that entity points to three other catalog-info files in the repo with a `Component` entity in each one.
+```
+/
+  feature_one/
+    catalog-info.yaml     <- kind: Component
+  feature_two/
+    catalog-info.yaml     <- kind: Component
+  feature_three/
+    catalog-info.yaml     <- kind: Component
+  catalog-info.yaml       <- kind: Location
+```
+- If you register the root `Location` entity, the actual effect is that five entities appear in the catalog. First, one that is named `generated--something`, which corresponds to the registered URL itself. That's the one that the provider has put in its "bucket". Then, as processing loops chug along, the `Location` entity you pointed to appears as a child of that, and then the three `Component` entities appear in turn as children of the `Location`.
+
+- As an end user of the Backstage interface, you may now want to delete one of the three `Component` entities. You do that by visiting the three-dots menu in the top right of an entity view. The popup dialog that appears will inform you that actually this entity belongs to a certain root, and that you may want to remove that root instead (which corresponds to unregistering the originally registered URL). If you choose to do so, all of the aforementioned five entities will actually be deleted in the same operation.
+
+- If you did not want to perform this aggressive pruning, you might have instead chosen to remove one of the `target` rows of your `Location` catalog-info file, and then deleted the catalog-info file that contained the `Component` you wanted to get rid of. Now the catalog would be left with an orphaned component, and you would instead be able to use the explicit deletion (see below) to delete that single component.
+
+### Explicit Deletion
+- The catalog and its REST API also permits direct deletion of individual entities. This makes sense to do on orphaned entities; entities that aren't being actively kept up to date by any parent entities. The popup interface under the three-dots menu option of entity views does offer this option, and the orphaned status can be seen in an info box at the top of the entity's overview page.
+
+-However, if you were to try to do an explicit deletion on an entity that's being kept actively updated by a parent entity, it would just reappear again shortly thereafter when the processing loops reconsider the parent entity that's still in there.
+
+## Catalog Configuration
+
 
 # acknowledgment
 ## Contributors
