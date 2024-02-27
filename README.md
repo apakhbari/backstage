@@ -106,7 +106,8 @@ Manually registering components:
 Understanding the Lifecycle of an Entity
 - By registering a YAML file location, you’ve already added your first component to the Catalog. Under the hood, Backstage used an entity provider to store it as a raw entity in the database, then ran it through a series of processors and stitched together the processors’ outcomes into a final entity. Only after all this is done you could see the entity page in your Catalog. 
 
-![Entity lifecycle.png](./etc/Entity_lifecycle.png)
+IMG
+![Entity lifecycle.png](./images/overview_entity-lifecycle.png)
 
 - All entities in Backstage come from entity providers, which take data from authoritative sources. Entity providers import raw data from their source and store it in a database in a process called ingestion. A Backstage instance typically uses more than one entity provider, for example, GitHub for repositories, Okta for users, and AWS S3 for resources. Entity providers can issue updates on their associated entities when they see fit and determine when raw entities are to be processed. 
 - When marked for processing, a raw entity goes through a series of steps with processors that may change their data format, extract relationships, emit errors, or even create new entities. Entities are processed one by one but can involve all of your services. You can add and configure processors in your instance as you want.
