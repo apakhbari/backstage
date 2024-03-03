@@ -28,7 +28,17 @@
   - `links` [optional] 
 - Common to All Kinds: Relations
 - Common to All Kinds: Status
+[Divider] [Divider] [Divider] [Divider]
 - Kind: Component
+  - `apiVersion` and `kind` [required]
+  - `spec.type` [required]
+  - `spec.lifecycle` [required]
+  - `spec.owner` [required]
+  - `spec.system` [optional]
+  - `spec.subcomponentOf` [optional]
+  - `spec.providesApis` [optional]
+  - `spec.consumesApis` [optional]
+  - `spec.dependsOn` [optional]
 - Kind: Template
 - Kind: API
 - Kind: Group
@@ -321,6 +331,63 @@ Describes the following entity kind:
 |:----------:|:---------------------:|
 | apiVersion | backstage.io/v1alpha1 |
 | kind       | Component             |
+
+- A Component describes a software component. It is typically intimately linked to the source code that constitutes the component, and should be what a developer may regard a "unit of software", usually with a distinct deployable or linkable artifact.
+
+- Descriptor files for this kind may look as follows:
+```
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: artist-web
+  description: The place to be, for great artists
+spec:
+  type: website
+  lifecycle: production
+  owner: artist-relations-team
+  system: artist-engagement-portal
+  dependsOn:
+    - resource:default/artists-db
+  providesApis:
+    - artist-api
+```
+
+this kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to `backstage.io/v1alpha1` and `Component`, respectively.
+
+### `spec.type` [required]
+- The type of component as a string, e.g. `website`. This field is required.
+- The software catalog accepts any type value, but an organization should take great care to establish a proper taxonomy for these. Tools including Backstage itself may read this field and behave differently depending on its value. For example, a website type component may present tooling in the Backstage interface that is specific to just websites.
+- The current set of well-known and common values for this field is:
+
+1. `service` - a backend service, typically exposing an API
+2. `website` - a website
+3. `library` - a software library, such as an npm module or a Java library
+
+### `spec.lifecycle` [required]
+- The lifecycle state of the component, e.g. `production`. This field is required.
+- The software catalog accepts any lifecycle value, but an organization should take great care to establish a proper taxonomy for these.
+- The current set of well-known and common values for this field is:
+
+1. `experimental` - an experiment or early, non-production component, signaling that users may not prefer to consume it over other more established components, or that there are low or no reliability guarantees
+2. `production` - an established, owned, maintained component
+3. `deprecated` - a component that is at the end of its lifecycle, and may disappear at a later point in time
+
+### `spec.owner` [required]
+- An entity reference to the owner of the component, e.g. artist-relations-team. This field is required.
+- In Backstage, the owner of a component is the singular entity (commonly a team) that bears ultimate responsibility for the component, and has the authority and capability to develop and maintain it. They will be the point of contact if something goes wrong, or if features are to be requested. The main purpose of this field is for display purposes in Backstage, so that people looking at catalog items can get an understanding of to whom this component belongs. It is not to be used by automated processes to for example assign authorization in runtime systems. There may be others that also develop or otherwise touch the component, but there will always be one ultimate owner.
+
+|            `kind`           |            Default [`namespace`]           | Generated `relation` type         |
+|:-------------------------:|:----------------------------------------:|---------------------------------|
+| `Group` (default), `User` | Same as this entity, typically `default` | `ownerOf` , and reverse   `ownedBy` |
+
+### `spec.system` [optional]
+### `spec.subcomponentOf` [optional]
+### `spec.providesApis` [optional]
+### `spec.consumesApis` [optional]
+### `spec.dependsOn` [optional]
 
 
 
