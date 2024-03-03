@@ -34,6 +34,9 @@ We model software in the Backstage catalogue using these three core entities (fu
 - **APIs** are the boundaries between different components
 - **Resources** are physical or virtual infrastructure needed to operate a component
 
+IMG
+![software-model-core-entities.svg](./images/software-model-core-entities.svg)
+
 ### Component
 - A component is a piece of software, for example a mobile feature, web site, backend service or data pipeline (list not exhaustive). A component can be tracked in source control, or use some existing open source or commercial software.
 
@@ -61,6 +64,9 @@ A large catalogue of components, APIs and resources can be highly granular and h
 
 - **Systems** are a collection of entities that cooperate to perform some function
 - **Domains** relate entities and systems to part of the business
+
+IMG
+![software-model-entities.svg](./images/software-model-entities.svg)
 
 ### System
 - With increasing complexity in software, systems form an important abstraction level to help us reason about software ecosystems. Systems are a useful concept in that they allow us to ignore the implementation details of a certain functionality for consumers, while allowing the owning team to make changes as they see fit (leading to low coupling).
