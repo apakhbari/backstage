@@ -243,8 +243,87 @@ Example: `visits-tracking-service`, `CircleciBuildsDumpV2_avro_gcs`
 - The semantics of the type field are undefined. The adopter is free to define their own set of types and utilize them as they wish. Some potential use cases can be to utilize the type field to validate certain links exist on entities or to create customized UI components for specific link types.
 
 ## Common to All Kinds: Relations
+- The relations root field is a read-only list of relations, between the current entity and other entities, described in the well-known relations section. Relations are commonly two-way, so that there's a pair of relation types each describing one direction of the relation.
+- A relation as part of a single entity that's read out of the API may look as follows.
+```
+{
+  // ...
+  "relations": [
+    {
+      "type": "ownedBy",
+      "targetRef": "group:default/dev.infra"
+    }
+  ],
+  "spec": {
+    "owner": "dev.infra",
+    // ...
+  }
+}
+```
+- The fields of a relation are:
+
+|   Field   |  Type  |                           Description                           |
+|:---------:|:------:|:---------------------------------------------------------------:|
+| targetRef | String | A full   entity reference  to the other end of the relation.    |
+|    type   | String | The type of relation FROM a source entity TO the target entity. |
+| metadata  | Object | Reserved for future use.                                        |
+
+- Entity descriptor YAML files are not supposed to contain this field. Instead, catalog processors analyze the entity descriptor data and its surroundings, and deduce relations that are then attached onto the entity as read from the catalog.
+- Where relations are produced, they are to be considered the authoritative source for that piece of data. In the example above, a plugin would do better to consume the relation rather than spec.owner for deducing the owner of the entity, because it may even be the case that the owner isn't taken from the YAML at all - it could be taken from a CODEOWNERS file nearby instead for example. Also, the spec.owner is on a shortened form and may have semantics associated with it (such as the default kind being Group if not specified).
+- See the well-known relations section for a list of well-known / common relations and their semantics.
+
 ## Common to All Kinds: Status
+- The status root object is a read-only set of statuses, pertaining to the current state or health of the entity, described in the well-known statuses section.
+- Currently, the only defined field is the items array. Each of its items contains a specific data structure that describes some aspect of the state of the entity, as seen from the point of view of some specific system. Different systems may contribute to this array, under their own respective type keys.
+- The current main use case for this field is for the ingestion processes of the catalog itself to convey information about errors and warnings back to the user.
+- A status field as part of a single entity that's read out of the API may look as follows:
+```
+{
+  // ...
+  "status": {
+    "items": [
+      {
+        "type": "backstage.io/catalog-processing",
+        "level": "error",
+        "message": "NotFoundError: File not found",
+        "error": {
+          "name": "NotFoundError",
+          "message": "File not found",
+          "stack": "..."
+        }
+      }
+    ]
+  },
+  "spec": {
+    // ...
+  }
+}
+```
+- The fields of a status item are:
+|  Field  |  Type  |                                            Description                                           |
+|:-------:|:------:|:------------------------------------------------------------------------------------------------:|
+| type    | String | The type of status as a unique key per source. Each type may appear more than once in the array. |
+|  level  | String |              The level / severity of the status item: 'info', 'warning, or 'error'.              |
+| message | String | A brief message describing the status, intended for human consumption.                           |
+| error   | Object | An optional serialized error object related to the status.                                       |
+
+- The `type` is an arbitrary string, but we recommend that types that are not strictly private within the organization be namespaced to avoid collisions. Types emitted by Backstage core processes will for example be prefixed with `backstage.io/` as in the example above.
+- Entity descriptor YAML files are not supposed to contain a `status` root key. Instead, catalog processors analyze the entity descriptor data and its surroundings, and deduce status entries that are then attached onto the entity as read from the catalog.
+- See the well-known statuses section for a list of well-known / common status types.
+
+---
+---
+
 ## Kind: Component
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1alpha1 |
+| kind       | Component             |
+
+
+
 ## Kind: Template
 ## Kind: API
 ## Kind: Group
