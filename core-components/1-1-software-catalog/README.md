@@ -360,7 +360,12 @@ IMG
 #### Template
 - A template definition describes both the parameters that are rendered in the frontend part of the scaffolding wizard, and the steps that are executed when scaffolding that component.
 
-## 
+## YAML File Format
+- This both applies to objects given to and returned from the software catalog API, as well as to the descriptor files that the software catalog can ingest natively. In the API request/response cycle, a JSON representation is used, while the descriptor files are on YAML format to be more easily maintainable by humans. However, the structure and semantics are the same in both cases.
+- Although it's possible to name catalog entity descriptor files however you wish, we recommend that you name them catalog-info.yaml.
+
+
+
 
 # acknowledgment
 ## Contributors
