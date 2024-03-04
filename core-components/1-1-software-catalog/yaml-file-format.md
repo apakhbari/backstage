@@ -29,7 +29,7 @@
 - Common to All Kinds: Relations
 - Common to All Kinds: Status
 [Divider] [Divider] [Divider] [Divider]
-- Kind: Component
+- Kind: `Component`
   - `apiVersion` and `kind` [required]
   - `spec.type` [required]
   - `spec.lifecycle` [required]
@@ -39,14 +39,41 @@
   - `spec.providesApis` [optional]
   - `spec.consumesApis` [optional]
   - `spec.dependsOn` [optional]
-- Kind: Template
-- Kind: API
-- Kind: Group
-- Kind: User
-- Kind: Resource
-- Kind: System
-- Kind: Domain
-- Kind: Location
+- Kind: `Template`
+  - `apiVersion` and `kind` [required]
+  - `metadata.tags` [optional]
+  - `spec.type` [required]
+  - `spec.parameters` [required]
+  - `spec.steps` [required]
+  - `spec.owner` [optional] 
+- Kind: `API`
+  - `apiVersion` and `kind` [required]
+  - `spec.type` [required]
+  - `spec.lifecycle` [required]
+  - `spec.owner` [required]
+  - `spec.system` [optional]
+  - `spec.definition` [required]
+- Kind: `Group`
+  - `apiVersion` and `kind` [required]
+  - `spec.type` [required]
+  - `spec.profile` [optional]
+  - `spec.parent` [optional]
+  - `spec.children` [required]
+  - `spec.members` [optional] 
+- Kind: `User`
+  - `apiVersion` and `kind` [required]
+  - `spec.profile` [optional]
+  - `spec.memberOf` [required]
+- Kind: `Resource`
+  - `apiVersion` and `kind` [required]
+  - `spec.owner` [required]
+  - `spec.type` [required]
+  - `spec.system` [optional]
+  - `spec.dependsOn` [optional]
+  - `spec.dependencyOf` [optional]
+- Kind: `System`
+- Kind: `Domain`
+- Kind: `Location`
 
 ## Overall Shape Of An Entity
 - The following is an example of a descriptor file for a Component entity:
@@ -380,22 +407,391 @@ this kind has the following structure:
 - In Backstage, the owner of a component is the singular entity (commonly a team) that bears ultimate responsibility for the component, and has the authority and capability to develop and maintain it. They will be the point of contact if something goes wrong, or if features are to be requested. The main purpose of this field is for display purposes in Backstage, so that people looking at catalog items can get an understanding of to whom this component belongs. It is not to be used by automated processes to for example assign authorization in runtime systems. There may be others that also develop or otherwise touch the component, but there will always be one ultimate owner.
 
 |            `kind`           |            Default [`namespace`]           | Generated `relation` type         |
-|:-------------------------:|:----------------------------------------:|---------------------------------|
+|:-------------------------:|:----------------------------------------:|:---------------------------------:|
 | `Group` (default), `User` | Same as this entity, typically `default` | `ownerOf` , and reverse   `ownedBy` |
 
 ### `spec.system` [optional]
+- An entity reference to the system that the component belongs to, e.g. `artist-engagement-portal`. This field is optional.
+
+|       kind       |           Default [namespace]          | Generated relation type     |
+|:----------------:|:--------------------------------------:|:-----------------------------:|
+| System (default) | Same as this entity, typically default | partOf, and reverse hasPart |
+
 ### `spec.subcomponentOf` [optional]
+- An entity reference to another component of which the component is a part, e.g. `spotify-ios-app`. This field is optional.
+
+|         kind        |           Default [namespace]          | Generated relation type     |
+|:-------------------:|:--------------------------------------:|:-----------------------------:|
+| component (default) | Same as this entity, typically default | partOf, and reverse hasPart |
+
 ### `spec.providesApis` [optional]
+- An array of entity references to the APIs that are provided by the component, e.g. `artist-api`. This field is optional.
+
+|      kind     |           Default [namespace]          | Generated relation type     |
+|:-------------:|:--------------------------------------:|:-----------------------------:|
+| API (default) | Same as this entity, typically default | partOf, and reverse hasPart |
+
 ### `spec.consumesApis` [optional]
+- An array of entity references to the APIs that are consumed by the component, e.g. `artist-api`. This field is optional.
+
+|      kind     |           Default [namespace]          | Generated relation type     |
+|:-------------:|:--------------------------------------:|:-----------------------------:|
+| API (default) | Same as this entity, typically default | partOf, and reverse hasPart |
+
 ### `spec.dependsOn` [optional]
+- An array of entity references to the components and resources that the component depends on, e.g. `artists-db`. This field is optional.
 
-
+|    kind   |           Default [namespace]          | Generated relation type             |
+|:---------:|:--------------------------------------:|:-------------------------------------:|
+| Component | Same as this entity, typically default | dependsOn, and reverse dependencyOf |
+| Resource  | Same as this entity, typically default | dependsOn, and reverse dependencyOf |
 
 ## Kind: Template
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1beta2  |
+| kind       | Template              |
+
+- A template definition describes both the parameters that are rendered in the frontend part of the scaffolding wizard, and the steps that are executed when scaffolding that component.
+
+- Descriptor files for this kind may look as follows.
+```
+apiVersion: backstage.io/v1beta2
+kind: Template
+# some metadata about the template itself
+metadata:
+  name: v1beta2-demo
+  title: Test Action template
+  description: scaffolder v1beta2 template demo
+spec:
+  owner: backstage/techdocs-core
+  type: service
+
+  # these are the steps which are rendered in the frontend with the form input
+  parameters:
+    - title: Fill in some steps
+      required:
+        - name
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Unique name of the component
+          ui:autofocus: true
+          ui:options:
+            rows: 5
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  # here's the steps that are executed in series in the scaffolder backend
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./template
+        values:
+          name: '{{ parameters.name }}'
+
+    - id: fetch-docs
+      name: Fetch Docs
+      action: fetch:plain
+      input:
+        targetPath: ./community
+        url: https://github.com/backstage/community/tree/main/backstage-community-sessions
+
+    - id: publish
+      name: Publish
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: 'This is {{ parameters.name }}'
+        repoUrl: '{{ parameters.repoUrl }}'
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: {{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+```
+
+this kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to `backstage.io/v1beta2` and `Template`, respectively.
+
+### `metadata.tags` [optional]
+- A list of strings that can be associated with the template, e.g. [`recommended`, `react`].
+- This list will also be used in the frontend to display to the user so you can potentially search and group templates by these tags.
+
+### `spec.type` [required]
+- The type of component created by the template, e.g. `website`. This is used for filtering templates, and should ideally match the Component `spec.type` created by the template.
+
+### `spec.parameters` [required]
+- You can find out more about this in template section
+
+### `spec.steps` [required]
+- You can find out more about this in template section
+
+### `spec.owner` [optional]
+- An entity reference to the owner of the template, e.g. `artist-relations-team`. This field is required.
+- In Backstage, the owner of a Template is the singular entity (commonly a team) that bears ultimate responsibility for the Template, and has the authority and capability to develop and maintain it. They will be the point of contact if something goes wrong, or if features are to be requested. The main purpose of this field is for display purposes in Backstage, so that people looking at catalog items can get an understanding of to whom this Template belongs. It is not to be used by automated processes to for example assign authorization in runtime systems. There may be others that also develop or otherwise touch the Template, but there will always be one ultimate owner.
+
+|            `kind`           |            Default [`namespace`]           | Generated `relation` type         |
+|:-------------------------:|:----------------------------------------:|:---------------------------------:|
+| `Group` (default), `User` | Same as this entity, typically `default` | `ownerOf` , and reverse   `ownedBy` |
+
 ## Kind: API
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1alpha1 |
+| kind       | API                   |
+
+- An API describes an interface that can be exposed by a component. The API can be defined in different formats, like OpenAPI, AsyncAPI, GraphQL, gRPC, or other formats.
+
+Descriptor files for this kind may look as follows:
+
+```
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: artist-api
+  description: Retrieve artist details
+spec:
+  type: openapi
+  lifecycle: production
+  owner: artist-relations-team
+  system: artist-engagement-portal
+  definition: |
+    openapi: "3.0.0"
+    info:
+      version: 1.0.0
+      title: Artist API
+      license:
+        name: MIT
+    servers:
+      - url: http://artist.spotify.net/v1
+    paths:
+      /artists:
+        get:
+          summary: List all artists
+    ...
+```
+
+this kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to `backstage.io/v1alpha1` and `API`, respectively.
+
+### `spec.type` [required]
+- The type of the API definition as a string, e.g. `openapi`. This field is required.
+- The software catalog accepts any type value, but an organization should take great care to establish a proper taxonomy for these. Tools including Backstage itself may read this field and behave differently depending on its value. For example, an OpenAPI type API may be displayed using an OpenAPI viewer tooling in the Backstage interface.
+- The current set of well-known and common values for this field is:
+  - `openapi` - An API definition in YAML or JSON format based on the OpenAPI version 2 or version 3 spec.
+  - `asyncapi` - An API definition based on the AsyncAPI version 2 or version 3 spec.
+  - `graphql` - An API definition based on GraphQL schemas for consuming GraphQL based APIs.
+  - `grpc` - An API definition based on Protocol Buffers to use with gRPC.
+
+### `spec.lifecycle` [required]
+- The lifecycle state of the component, e.g. `production`. This field is required.
+- The software catalog accepts any lifecycle value, but an organization should take great care to establish a proper taxonomy for these.
+- The current set of well-known and common values for this field is:
+
+1. `experimental` - an experiment or early, non-production component, signaling that users may not prefer to consume it over other more established components, or that there are low or no reliability guarantees
+2. `production` - an established, owned, maintained component
+3. `deprecated` - a component that is at the end of its lifecycle, and may disappear at a later point in time
+
+### `spec.owner` [required]
+- An entity reference to the owner of the component, e.g. artist-relations-team. This field is required.
+- In Backstage, the owner of a component is the singular entity (commonly a team) that bears ultimate responsibility for the component, and has the authority and capability to develop and maintain it. They will be the point of contact if something goes wrong, or if features are to be requested. The main purpose of this field is for display purposes in Backstage, so that people looking at catalog items can get an understanding of to whom this component belongs. It is not to be used by automated processes to for example assign authorization in runtime systems. There may be others that also develop or otherwise touch the component, but there will always be one ultimate owner.
+
+|            `kind`           |            Default [`namespace`]           | Generated `relation` type         |
+|:-------------------------:|:----------------------------------------:|:---------------------------------:|
+| `Group` (default), `User` | Same as this entity, typically `default` | `ownerOf` , and reverse   `ownedBy` |
+
+### `spec.system` [optional]
+- An entity reference to the system that the component belongs to, e.g. `artist-engagement-portal`. This field is optional.
+
+|       kind       |           Default [namespace]          | Generated relation type     |
+|:----------------:|:--------------------------------------:|:-----------------------------:|
+| System (default) | Same as this entity, typically default | partOf, and reverse hasPart |
+
+### `spec.definition` [required]
+- The definition of the API, based on the format defined by spec.type. This field is required.
+
 ## Kind: Group
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1alpha1 |
+| kind       | Group                 |
+
+- A group describes an organizational entity, such as for example a team, a business unit, or a loose collection of people in an interest group. Members of these groups are modeled in the catalog as kind `User`.
+
+- Descriptor files for this kind may look as follows:
+```
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: infrastructure
+  description: The infra business unit
+spec:
+  type: business-unit
+  profile:
+    displayName: Infrastructure
+    email: infrastructure@example.com
+    picture: https://example.com/groups/bu-infrastructure.jpeg
+  parent: ops
+  children: [backstage, other]
+  members: [jdoe]
+```
+this kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to `backstage.io/v1alpha1` and `Group`, respectively.
+
+### `spec.type` [required]
+- The type of group as a string, e.g. team. There is currently no enforced set of values for this field, so it is left up to the adopting organization to choose a nomenclature that matches their org hierarchy.
+
+- Some common values for this field could be:
+  - `team`
+  - `business-unit`
+  - `product-area`
+  - `root` - as a common virtual root of the hierarchy, if desired
+ 
+### `spec.profile` [optional]
+- Optional profile information about the group, mainly for **display purposes**. All fields of this structure are also optional. The email would be a group email of some form, that the group may wish to be used for contacting them. The picture is expected to be a URL pointing to an image that's representative of the group, and that a browser could fetch and render on a group page or similar.
+
+The fields of a profile are:
+|          Field         |  Type  |                           Description                          |
+|:----------------------:|:------:|:--------------------------------------------------------------:|
+| displayName (optional) | String |              A human-readable name for the group.              |
+| email (optional)       | String |   An email the group may wish to be used for contacting them.  |
+| picture (optional)     | String | A URL pointing to an image that's representative of the group. |
+
+### `spec.parent` [optional]
+- The immediate parent group in the hierarchy, if any. Not all groups must have a parent; the catalog supports multi-root hierarchies. Groups may however not have more than one parent.
+
+- This field is an `entity reference`.
+
+|       kind      |            Default namespace           |    Generated relation type    |
+|:---------------:|:--------------------------------------:|:-----------------------------:|
+| Group (default) | Same as this entity, typically default | childOf, and reverse parentOf |
+
+### `spec.children` [required]
+- The immediate child groups of this group in the hierarchy (whose parent field points to this group). The list must be present, but may be empty if there are no child groups. The items are not guaranteed to be ordered in any particular way.
+
+- The entries of this array are entity references.
+
+|       kind      |            Default namespace           |    Generated relation type    |
+|:---------------:|:--------------------------------------:|:-----------------------------:|
+| Group (default) | Same as this entity, typically default | childOf, and reverse parentOf |
+
+### `spec.members` [optional]
+- The users that are direct members of this group. The items are not guaranteed to be ordered in any particular way.
+
+- The entries of this array are entity references.
+
+|       kind      |            Default namespace           |    Generated relation type    |
+|:---------------:|:--------------------------------------:|:-----------------------------:|
+| User (default)  | Same as this entity, typically default | hasMember, and reverse memberOf |
+
 ## Kind: User
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1alpha1 |
+| kind       | User                  |
+
+- A user describes a person, such as an employee, a contractor, or similar. Users belong to Group entities in the catalog.
+- These catalog user entries are connected to the way that authentication within the Backstage ecosystem works. See the auth section of the docs for a discussion of these concepts.
+
+- Descriptor files for this kind may look as follows.
+```
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: jdoe
+spec:
+  profile:
+    displayName: Jenny Doe
+    email: jenny-doe@example.com
+    picture: https://example.com/staff/jenny-with-party-hat.jpeg
+  memberOf: [team-b, employees]
+```
+this kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to `backstage.io/v1alpha1` and `User`, respectively.
+
+### `spec.profile` [optional]
+- Optional profile information about the user, mainly for display purposes. All fields of this structure are also optional. The email would be a primary email of some form, that the user may wish to be used for contacting them. The picture is expected to be a URL pointing to an image that's representative of the user, and that a browser could fetch and render on a profile page or similar.
+
+- The fields of a profile are:
+|          Field         |  Type  |                           Description                          |
+|:----------------------:|:------:|:--------------------------------------------------------------:|
+| displayName (optional) | String |              A human-readable name for the user.              |
+| email (optional)       | String |   An email the user may wish to be used for contacting them.  |
+| picture (optional)     | String | A URL pointing to an image that's representative of the user. |
+
+### `spec.memberOf` [required]
+- The list of groups that the user is a direct member of (i.e., no transitive memberships are listed here). The list must be present, but may be empty if the user is not member of any groups. The items are not guaranteed to be ordered in any particular way.
+
+- The entries of this array are entity references.
+|       kind      |            Default namespace           |    Generated relation type    |
+|:---------------:|:--------------------------------------:|:-----------------------------:|
+| Group (default)  | Same as this entity, typically default | memberOf, and reverse hasMember |
+
 ## Kind: Resource
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1alpha1 |
+| kind       | Resource              |
+
+- A resource describes the infrastructure a system needs to operate, like BigTable databases, Pub/Sub topics, S3 buckets or CDNs. Modelling them together with components and systems allows to visualize resource footprint, and create tooling around them.
+
+- Descriptor files for this kind may look as follows:
+```
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: artists-db
+  description: Stores artist details
+spec:
+  type: database
+  owner: artist-relations-team
+  system: artist-engagement-portal
+```
+this kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to backstage.io/v1alpha1 and Resource, respectively.
+
+### `spec.owner` [required]
+### `spec.type` [required]
+### `spec.system` [optional]
+### `spec.dependsOn` [optional]
+### `spec.dependencyOf` [optional]
+
+
 ## Kind: System
 ## Kind: Domain
 ## Kind: Location
