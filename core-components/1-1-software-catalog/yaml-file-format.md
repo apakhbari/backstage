@@ -27,7 +27,14 @@
   - `tags` [optional]
   - `links` [optional] 
 - Common to All Kinds: Relations
-- Common to All Kinds: Status
+  - ownedBy and ownerOf
+  - providesApi and apiProvidedBy
+  - consumesApi and apiConsumedBy
+  - dependsOn and dependencyOf
+  - parentOf and childOf
+  - memberOf and hasMember
+  - partOf and hasPart
+  - Common to All Kinds: Status
 [Divider] [Divider] [Divider] [Divider]
 - Kind: `Component`
   - `apiVersion` and `kind` [required]
@@ -269,6 +276,53 @@ Example: `visits-tracking-service`, `CircleciBuildsDumpV2_avro_gcs`
 - Values can be of any length, but are limited to being strings.
 - There is a list of well-known annotations, but anybody is free to add more annotations as they see fit.
 
+#### Well known Annotations
+see: https://backstage.io/docs/features/software-catalog/well-known-annotations
+
+- backstage.io/managed-by-location
+- backstage.io/managed-by-origin-location
+
+- backstage.io/orphan
+
+- backstage.io/techdocs-ref
+- backstage.io/techdocs-entity
+
+- backstage.io/view-url, backstage.io/edit-url
+
+- backstage.io/source-location
+
+- jenkins.io/job-full-name
+
+- github.com/project-slug
+- github.com/team-slug
+- github.com/user-login
+
+- gocd.org/pipelines
+
+- periskop.io/service-name
+
+- sentry.io/project-slug
+
+- rollbar.com/project-slug
+
+- circleci.com/project-slug
+
+- backstage.io/ldap-rdn, backstage.io/ldap-uuid, backstage.io/ldap-dn
+
+- graph.microsoft.com/tenant-id, graph.microsoft.com/group-id, graph.microsoft.com/user-id
+
+- sonarqube.org/project-key
+
+- backstage.io/code-coverage
+
+- vault.io/secrets-path
+
+##### Deprecated Annotations
+- backstage.io/github-actions-id
+- backstage.io/definition-at-location
+- jenkins.io/github-folder
+
+
 ### `tags` [optional]
 - A list of single-valued strings, for example to classify catalog entities in various ways. This is different to the labels in metadata, as labels are key-value pairs.
 - The values are user defined, for example the programming language used for the component, like java or go.
@@ -318,9 +372,37 @@ Example: `visits-tracking-service`, `CircleciBuildsDumpV2_avro_gcs`
 
 - Entity descriptor YAML files are not supposed to contain this field. Instead, catalog processors analyze the entity descriptor data and its surroundings, and deduce relations that are then attached onto the entity as read from the catalog.
 - Where relations are produced, they are to be considered the authoritative source for that piece of data. In the example above, a plugin would do better to consume the relation rather than spec.owner for deducing the owner of the entity, because it may even be the case that the owner isn't taken from the YAML at all - it could be taken from a CODEOWNERS file nearby instead for example. Also, the spec.owner is on a shortened form and may have semantics associated with it (such as the default kind being Group if not specified).
-- See the well-known relations section for a list of well-known / common relations and their semantics.
+
+- Each relation has a source (implicitly: the entity that holds the relation), a target (the entity to which the source has a relation), and a type that tells what relation the source has with the target. The relation is directional; there are commonly pairs of relation types and the entity at the other end will have the opposite relation in the opposite direction (e.g. when querying for `A`, you will see `A.ownedBy.B`, and when querying `B`, you will see `B.ownerOf.A`).
+
+### Well known Relations
+see: https://backstage.io/docs/features/software-catalog/well-known-relations
+
+#### ownedBy and ownerOf
+- An ownership relation where the owner is usually an organizational entity (`User` or `Group`), and the other entity can be anything.
+
+#### providesApi and apiProvidedBy
+- A relation with an `API` entity, typically from a `Component`.
+
+#### consumesApi and apiConsumedBy
+- A relation with an `API` entity, typically from a `Component`.
+
+#### dependsOn and dependencyOf
+- A relation denoting a dependency on another entity.
+
+#### parentOf and childOf
+- A parent/child relation to build up a tree, used for example to describe the organizational structure between `Groups`.
+
+#### memberOf and hasMember
+- A membership relation, typically for `Users` in `Groups`.
+
+#### partOf and hasPart
+- A relation with a `Domain`, `System` or `Component` entity, typically from a `Component`, `API`, or `System`.
+
 
 ## Common to All Kinds: Status
+- IMPORTANT: This status is in active development and its format will change unexpectedly. Do not consume it in your own code until such a time that this documentation has been updated.
+
 - The status root object is a read-only set of statuses, pertaining to the current state or health of the entity, described in the well-known statuses section.
 - Currently, the only defined field is the items array. Each of its items contains a specific data structure that describes some aspect of the state of the entity, as seen from the point of view of some specific system. Different systems may contribute to this array, under their own respective type keys.
 - The current main use case for this field is for the ingestion processes of the catalog itself to convey information about errors and warnings back to the user.
@@ -961,6 +1043,9 @@ This kind has the following structure:
 APA 🖖🏻
 
 ## Links
+- Well known Annotations --> https://backstage.io/docs/features/software-catalog/well-known-annotations
+- Well known Relations --> https://backstage.io/docs/features/software-catalog/well-known-relations
+
 
 ```
   aaaaaaaaaaaaa  ppppp   ppppppppp     aaaaaaaaaaaaa   
