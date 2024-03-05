@@ -72,8 +72,19 @@
   - `spec.dependsOn` [optional]
   - `spec.dependencyOf` [optional]
 - Kind: `System`
+  - `apiVersion` and `kind` [required]
+  - `spec.owner` [required]
+  - `spec.domain` [optional]
 - Kind: `Domain`
+  - `apiVersion` and `kind` [required]
+  - `spec.owner` [required]
 - Kind: `Location`
+  - `apiVersion` and `kind` [required]
+  - `spec` [required]
+  - `spec.type` [optional]
+  - `spec.target` [optional]
+  - `spec.targets` [optional]
+  - `spec.presence` [optional]
 
 ## Overall Shape Of An Entity
 - The following is an example of a descriptor file for a Component entity:
@@ -768,6 +779,8 @@ Describes the following entity kind:
 
 - A resource describes the infrastructure a system needs to operate, like BigTable databases, Pub/Sub topics, S3 buckets or CDNs. Modelling them together with components and systems allows to visualize resource footprint, and create tooling around them.
 
+- The main purpose of this field is for display purposes in Backstage
+
 - Descriptor files for this kind may look as follows:
 ```
 apiVersion: backstage.io/v1alpha1
@@ -786,15 +799,161 @@ this kind has the following structure:
 - Exactly equal to backstage.io/v1alpha1 and Resource, respectively.
 
 ### `spec.owner` [required]
-### `spec.type` [required]
-### `spec.system` [optional]
-### `spec.dependsOn` [optional]
-### `spec.dependencyOf` [optional]
+- An entity reference to the owner of the resource, e.g. `artist-relations-team`. This field is required.
+- In Backstage, the owner of a resource is the singular entity (commonly a team) that bears ultimate responsibility for the resource, and has the authority and capability to develop and maintain it. They will be the point of contact if something goes wrong, or if features are to be requested. **The main purpose of this field is for display purposes in Backstage**, so that people looking at catalog items can get an understanding of to whom this resource belongs. It is not to be used by automated processes to for example assign authorization in runtime systems. There may be others that also manage or otherwise touch the resource, but there will always be one ultimate owner.
 
+|       kind      |            Default namespace           |    Generated relation type    |
+|:---------------:|:--------------------------------------:|:-----------------------------:|
+| Group (default)  | Same as this entity, typically default | ownerOf, and reverse ownedBy |
+
+### `spec.type` [required]
+- The type of resource as a string, e.g. database. This field is required. There is currently no enforced set of values for this field, so it is left up to the adopting organization to choose a nomenclature that matches the resources used in their tech stack.
+
+- Some common values for this field could be:
+1. `database`
+2. `s3-bucket`
+3. `kubernetes-cluster`
+
+### `spec.system` [optional]
+- An entity reference to the system that the resource belongs to, e.g. `artist-engagement-portal`. This field is optional.
+
+
+|       kind       |           Default [namespace]          | Generated relation type     |
+|:----------------:|:--------------------------------------:|:-----------------------------:|
+| System (default) | Same as this entity, typically default | partOf, and reverse hasPart |
+
+
+### `spec.dependsOn` [optional]
+- An array of entity references to the components and resources that the component depends on, e.g. `artists-lookup`. This field is optional.
+
+|    kind   |           Default [namespace]          | Generated relation type             |
+|:---------:|:--------------------------------------:|:-------------------------------------:|
+| Component | Same as this entity, typically default | dependsOn, and reverse dependencyOf |
+| Resource  | Same as this entity, typically default | dependsOn, and reverse dependencyOf |
+
+### `spec.dependencyOf` [optional]
+- An array of entity references to the components and resources that the resource is a dependency of, e.g. `artist-lookup`. This field is optional.
+
+|    kind   |           Default [namespace]          | Generated relation type             |
+|:---------:|:--------------------------------------:|:-------------------------------------:|
+| Component | Same as this entity, typically default | dependsOn, and reverse dependencyOf |
+| Resource  | Same as this entity, typically default | dependsOn, and reverse dependencyOf |
 
 ## Kind: System
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1alpha1 |
+| kind       | System                |
+
+- A system is a collection of resources and components. The system may expose or consume one or several APIs. It is viewed as abstraction level that provides potential consumers insights into exposed features without needing a too detailed view into the details of all components. This also gives the owning team the possibility to decide about published artifacts and APIs.
+- Descriptor files for this kind may look as follows:
+```
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: artist-engagement-portal
+  description: Handy tools to keep artists in the loop
+spec:
+  owner: artist-relations-team
+  domain: artists
+```
+
+this kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to `backstage.io/v1alpha1` and `System`, respectively.
+
+### `spec.owner` [required]
+- An entity reference to the owner of the resource, e.g. `artist-relations-team`. This field is required.
+- In Backstage, the owner of a resource is the singular entity (commonly a team) that bears ultimate responsibility for the resource, and has the authority and capability to develop and maintain it. They will be the point of contact if something goes wrong, or if features are to be requested. **The main purpose of this field is for display purposes in Backstage**, so that people looking at catalog items can get an understanding of to whom this resource belongs. It is not to be used by automated processes to for example assign authorization in runtime systems. There may be others that also manage or otherwise touch the resource, but there will always be one ultimate owner.
+
+|       kind      |            Default namespace           |    Generated relation type    |
+|:---------------:|:--------------------------------------:|:-----------------------------:|
+| Group (default)  | Same as this entity, typically default | ownerOf, and reverse ownedBy |
+
+### `spec.domain` [optional]
+- An entity reference to the domain that the system belongs to, e.g. `artists`. This field is optional.
+
+|       kind       |            Default namespace           |   Generated relation type   |
+|:----------------:|:--------------------------------------:|:---------------------------:|
+| Domain (default) | Same as this entity, typically default | partOf, and reverse hasPart |
+
 ## Kind: Domain
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1alpha1 |
+| kind       | Domain                |
+
+- A Domain groups a collection of systems that share terminology, domain models, business purpose, or documentation, i.e. form a bounded context.
+
+- Descriptor files for this kind may look as follows:
+```
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: artists
+  description: Everything about artists
+spec:
+  owner: artist-relations-team
+```
+- this kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to `backstage.io/v1alpha1` and `System`, respectively.
+
+### `spec.owner` [required]
+- An entity reference to the owner of the resource, e.g. `artist-relations-team`. This field is required.
+- In Backstage, the owner of a resource is the singular entity (commonly a team) that bears ultimate responsibility for the resource, and has the authority and capability to develop and maintain it. They will be the point of contact if something goes wrong, or if features are to be requested. **The main purpose of this field is for display purposes in Backstage**, so that people looking at catalog items can get an understanding of to whom this resource belongs. It is not to be used by automated processes to for example assign authorization in runtime systems. There may be others that also manage or otherwise touch the resource, but there will always be one ultimate owner.
+
+|       kind      |            Default namespace           |    Generated relation type    |
+|:---------------:|:--------------------------------------:|:-----------------------------:|
+| Group (default)  | Same as this entity, typically default | ownerOf, and reverse ownedBy |
+
 ## Kind: Location
+Describes the following entity kind:
+
+|    Field   |         Value         |
+|:----------:|:---------------------:|
+| apiVersion | backstage.io/v1alpha1 |
+| kind       | Location              |
+
+- A location is a marker that references other places to look for catalog data.
+
+Descriptor files for this kind may look as follows.
+```
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: org-data
+spec:
+  type: url
+  targets:
+    - http://github.com/myorg/myproject/org-data-dump/catalog-info-staff.yaml
+    - http://github.com/myorg/myproject/org-data-dump/catalog-info-consultants.yaml
+```
+This kind has the following structure:
+
+### `apiVersion` and `kind` [required]
+- Exactly equal to backstage.io/v1alpha1 and Location, respectively.
+
+### `spec` [required]
+- The `spec` field is required. The minimal spec should be an empty object.
+
+### `spec.type` [optional]
+- The single location type, that's common to the targets specified in the spec. If it is left out, it is inherited from the location type that originally read the entity data. For example, if you have a `url` type location, that when read results in a `Location` kind entity with no `spec.type`, then the referenced targets in the entity will implicitly also be of `url` type. This is useful because you can define a hierarchy of things in a directory structure using relative target paths (see below), and it will work out no matter if it's consumed locally on disk from a `file` location, or as uploaded on a VCS.
+
+### `spec.target` [optional]
+- A single target as a string. Can be either an absolute path/URL (depending on the type), or a relative path such as `./details/catalog-info.yaml` which is resolved relative to the location of this Location entity itself.
+
+### `spec.targets` [optional]
+- A list of targets as strings. They can all be either absolute paths/URLs (depending on the type), or relative paths such as `./details/catalog-info.yaml` which are resolved relative to the location of this Location entity itself.
+
+### `spec.presence` [optional]
+- Describes whether the target of a location is `required` to exist or not. It defaults to 'required' if not specified, can also be `'optional'`.
 
 # acknowledgment
 ## Contributors
