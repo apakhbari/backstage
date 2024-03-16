@@ -10,7 +10,10 @@
 |_______||__| |__||_|   |_||_______|    |__| |__||_______|  |___|  |__| |__||_______||_|  |__|  |___|  |___| |_______||__| |__|  |___|  |___| |_______||_|  |__|
 ```
 
-
+## Pre-flight
+1. add a `.npmrc` file containing redhat registry
+- To just output the path of `.npmrc` file, issue `npm config get userconfig`
+- login to npm to crate `.npmrc` file `npm install -g npm-cli-login`
 
 # acknowledgment
 ## Contributors
