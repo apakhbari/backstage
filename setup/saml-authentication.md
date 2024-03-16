@@ -18,6 +18,9 @@
 APA 🖖🏻
 
 ## Links
+- <https://medium.com/@nahelou.j/configure-backstage-auth-using-saml-client-in-keycloak-d2a957c9fd37>
+
+- <https://access.redhat.com/documentation/en-us/red_hat_plug-ins_for_backstage/1.0/html-single/keycloak_backend_plugin_for_backstage/index>
 
 ```                                                                                                       
   aaaaaaaaaaaaa  ppppp   ppppppppp     aaaaaaaaaaaaa   
